@@ -21,6 +21,9 @@ interface AppState {
   saved: string[];
   /** Маршрут — упорядоченный список мест; дни считаются автоматически (см. src/geo/trip.ts). */
   trip: string[];
+  /** Скачанная подробная карта: страна → дата. */
+  offlineMaps: Partial<Record<CountryCode, string>>;
+  setOfflineMap: (c: CountryCode) => void;
   /** «Я здесь был»: id места → дата отметки (ISO). Из этого собирается карта путешествий. */
   visited: Record<string, string>;
   /** Очередь отметок «Заметили изменения?» — уйдёт на сервер, когда появится бэкенд и сеть. */
@@ -42,6 +45,8 @@ export const useApp = create<AppState>()(
       saved: [],
       trip: [],
       visited: {},
+      offlineMaps: {},
+      setOfflineMap: (c) => set({ offlineMaps: { ...get().offlineMaps, [c]: new Date().toISOString() } }),
       reports: [],
       setCountry: (country) => set({ country }),
       toggleSaved: (id) => {
@@ -74,7 +79,7 @@ export const useApp = create<AppState>()(
       name: 'voyz-app',
       version: 3,
       storage: createJSONStorage(() => mmkvStorage),
-      partialize: ({ country, lang, saved, trip, visited, reports }) => ({ country, lang, saved, trip, visited, reports }),
+      partialize: ({ country, lang, saved, trip, visited, reports, offlineMaps }) => ({ country, lang, saved, trip, visited, reports, offlineMaps }),
       // v1 хранил маршрут по дням (string[][]) — разворачиваем в плоский список
       migrate: (state, version) => {
         const s = state as Partial<AppState> & { trip?: unknown };

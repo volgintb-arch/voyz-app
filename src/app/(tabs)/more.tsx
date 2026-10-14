@@ -14,7 +14,9 @@ import type { CountryCode } from '@/data/types';
 import { toast, useApp } from '@/store/app-store';
 import { useFilters } from '@/store/filters';
 import { color, radius, spacing, type } from '@/theme/tokens';
-import { currentLang, pl, tr } from '@/i18n';
+import { downloadDetailedMap, supportsDetailedOffline } from '@/geo/offline-map';
+import { estimateMb } from '@/geo/offline-tiles';
+import { currentLang, dateLabel, pl, tr } from '@/i18n';
 
 export default function MoreTab() {
   const insets = useSafeAreaInsets();
@@ -26,6 +28,23 @@ export default function MoreTab() {
   const L = placesOf(country);
   const withPhoto = L.filter((p) => p.photos.length).length;
   const [offline, setOffline] = useState<{ done: number; total: number } | null>(null);
+  const [mapPct, setMapPct] = useState<number | null>(null);
+  const offlineMaps = useApp((s) => s.offlineMaps);
+  const setOfflineMap = useApp((s) => s.setOfflineMap);
+
+  const saveMap = async () => {
+    if (!supportsDetailedOffline()) return toast(tr('Сохранение доступно на опубликованном сайте'), 'map');
+    setMapPct(0);
+    try {
+      await downloadDetailedMap(country, setMapPct);
+      setOfflineMap(country);
+      setMapPct(100);
+      toast(tr('Подробная карта сохранена'), 'map');
+    } catch {
+      setMapPct(null);
+      toast(tr('Не получилось скачать карту — проверьте интернет'), 'map');
+    }
+  };
 
   const saveOffline = async () => {
     if (!canSaveOffline()) return toast(tr('Сохранение доступно на опубликованном сайте'), 'download');
@@ -90,6 +109,23 @@ export default function MoreTab() {
             </Pressable>
           </View>
         ) : null}
+
+        <View style={[styles.method, { marginTop: 12, backgroundColor: color.black }]}>
+          <Text style={[styles.methodB, { color: color.lime }]}>{tr('Подробная карта без сети')}</Text>
+          <Text style={[styles.methodT, { color: color.paper }]}>
+            {tr('Сёла, тропы, перевалы и подписи — для всей страны обзорно и подробно вокруг каждого места. Пригодится там, где нет связи.')}
+          </Text>
+          <Pressable onPress={saveMap} disabled={mapPct != null && mapPct < 100} style={[styles.offBtn, { backgroundColor: color.lime }]} accessibilityRole="button">
+            <Icon name="map" size={18} />
+            <Text style={[styles.offT, { color: color.black }]}>
+              {mapPct != null && mapPct < 100
+                ? tr('Скачиваем… {p}%', { p: mapPct })
+                : offlineMaps[country]
+                  ? tr('Карта скачана {date} · обновить', { date: dateLabel(offlineMaps[country]!) })
+                  : tr('Скачать {country} · ~{mb} МБ', { country: tr(meta.countries[country].name), mb: estimateMb(country) })}
+            </Text>
+          </Pressable>
+        </View>
 
         <View style={[styles.method, { marginTop: 20 }]}>
           <Text style={styles.methodB}>{tr('Как мы проверяем места')}</Text>

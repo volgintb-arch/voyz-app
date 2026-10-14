@@ -263,6 +263,14 @@ export const EN: Record<string, string> = {
   'Поделиться ссылкой на Voyz': 'Share a link to Voyz',
   'Voyz — путеводитель по Кыргызстану и Алтаю': 'Voyz — a guide to Kyrgyzstan and Altai',
   'Как мы проверяем места': 'How we check places',
+  'Подробная карта без сети': 'Detailed map offline',
+  'Сёла, тропы, перевалы и подписи — для всей страны обзорно и подробно вокруг каждого места. Пригодится там, где нет связи.':
+    'Villages, trails, passes and labels — an overview of the whole country and full detail around every place. Handy where there is no signal.',
+  'Скачиваем… {p}%': 'Downloading… {p}%',
+  'Карта скачана {date} · обновить': 'Map saved {date} · update',
+  'Скачать {country} · ~{mb} МБ': 'Download {country} · ~{mb} MB',
+  'Подробная карта сохранена': 'Detailed map saved',
+  'Не получилось скачать карту — проверьте интернет': 'Could not download the map — check your internet',
   'Каждая карточка — 34 поля: от координат и сезона до парковки, связи и стоимости входа. Мы сверяем данные минимум по двум открытым источникам, отмечаем дату проверки и спорные места. Индекс полноты (0–100) складывается из насыщенности, числа подтверждённых полей и практической части: дорога, ночлег, транспорт. В разделе «{country}» — {n} {places}, у {photos} есть фото.':
     'Each place has 34 fields — from coordinates and season to parking, mobile signal and entry fees. We cross-check data against at least two open sources and record the check date and disputed points. The completeness index (0–100) combines richness, confirmed fields and practical info: road, stays, transport. “{country}” has {n} {places}, {photos} with photos.',
   'Карта без сети': 'Offline map',
