@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View, type LayoutRectangle } from 'react-n
 import Animated, { useAnimatedStyle, useReducedMotion, withSpring, withTiming } from 'react-native-reanimated';
 
 import type { CountryCode } from '@/data/types';
+import { tr } from '@/i18n';
 import { toast, useApp } from '@/store/app-store';
 import { useFilters } from '@/store/filters';
 import { color, motion, type } from '@/theme/tokens';
@@ -49,7 +50,7 @@ export function CountrySegment() {
               setTimeout(() => {
                 clearFilters();
                 setCountry(c);
-                toast(full, 'globe');
+                toast(tr(full), 'globe');
               }, 380);
             }}
             accessibilityRole="radio"
@@ -57,7 +58,7 @@ export function CountrySegment() {
             hitSlop={6}
             style={styles.item}>
             <Text style={[styles.text, { color: on ? color.black : color.mutedOnDark }]} maxFontSizeMultiplier={1.3}>
-              {label}
+              {tr(label)}
             </Text>
           </Pressable>
         );

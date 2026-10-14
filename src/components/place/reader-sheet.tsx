@@ -7,6 +7,7 @@ import { RichText } from '@/components/rich-text';
 import { Sheet } from '@/components/sheet';
 import { Chip } from '@/components/ui';
 import { color } from '@/theme/tokens';
+import { tr } from '@/i18n';
 
 import type { Reader } from './readers';
 
@@ -27,7 +28,7 @@ export function ReaderSheet({ placeName, reader, onClose, onListen, listenLabel 
           <Text style={styles.title}>{reader.title}</Text>
           {onListen ? (
             <View style={{ marginBottom: 14 }}>
-              <Chip label={listenLabel ?? 'Послушать'} icon="play" tone="lime" onPress={onListen} />
+              <Chip label={listenLabel ?? tr('Послушать')} icon="play" tone="lime" onPress={onListen} />
             </View>
           ) : null}
           {reader.blocks.map((b, i) => {

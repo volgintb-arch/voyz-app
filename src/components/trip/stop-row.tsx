@@ -12,6 +12,7 @@ import { photoSource } from '@/data/places';
 import type { Place } from '@/data/types';
 import { catIcon } from '@/lib/icon-rules';
 import { color } from '@/theme/tokens';
+import { tr } from '@/i18n';
 
 export const ROW_H = 86;
 
@@ -58,7 +59,7 @@ export function StopRow({ place, n, index, count, onMove, onRemove }: Props) {
   return (
     <GestureDetector gesture={drag}>
       <Animated.View style={[styles.stop, st]}>
-        <Pressable onPress={() => router.push({ pathname: '/place/[id]', params: { id: place.id } })} style={styles.main} accessibilityRole="button" accessibilityLabel={`${n}. ${place.name}`} accessibilityHint="Удерживайте и тяните, чтобы поменять порядок">
+        <Pressable onPress={() => router.push({ pathname: '/place/[id]', params: { id: place.id } })} style={styles.main} accessibilityRole="button" accessibilityLabel={`${n}. ${place.name}`} accessibilityHint={tr('Удерживайте и тяните, чтобы поменять порядок')}>
           <View style={[styles.num, index === count - 1 && { backgroundColor: color.lime }]}>
             <Text style={[styles.numT, index === count - 1 && { color: color.black }]}>{n}</Text>
           </View>
@@ -79,10 +80,10 @@ export function StopRow({ place, n, index, count, onMove, onRemove }: Props) {
           </View>
         </Pressable>
         <View style={styles.ctl}>
-          <Pressable onPress={() => onMove(index, index - 1)} disabled={index === 0} hitSlop={4} style={[styles.mv, index === 0 && { opacity: 0.3 }]} accessibilityRole="button" accessibilityLabel="Выше">
+          <Pressable onPress={() => onMove(index, index - 1)} disabled={index === 0} hitSlop={4} style={[styles.mv, index === 0 && { opacity: 0.3 }]} accessibilityRole="button" accessibilityLabel={tr('Выше')}>
             <Icon name="up" size={16} />
           </Pressable>
-          <Pressable onPress={() => onMove(index, index + 1)} disabled={index === count - 1} hitSlop={4} style={[styles.mv, index === count - 1 && { opacity: 0.3 }]} accessibilityRole="button" accessibilityLabel="Ниже">
+          <Pressable onPress={() => onMove(index, index + 1)} disabled={index === count - 1} hitSlop={4} style={[styles.mv, index === count - 1 && { opacity: 0.3 }]} accessibilityRole="button" accessibilityLabel={tr('Ниже')}>
             <Icon name="down" size={16} />
           </Pressable>
         </View>

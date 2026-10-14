@@ -13,17 +13,19 @@ import { RichText } from '@/components/rich-text';
 import { Sheet } from '@/components/sheet';
 import { Button, Chip, IconBubble, IndexRing, ReadMore, SectionHeader } from '@/components/ui';
 import { VoyzLogo } from '@/components/voyz-logo';
-import { getPlace, placesOf, plural } from '@/data/places';
+import { catLabel, getPlace, placesOf } from '@/data/places';
 import type { Place } from '@/data/types';
 import { bringIcon } from '@/lib/icon-rules';
 import { cut, findTel, findUrl, fmtKm, lead, sentences, telHref } from '@/lib/text';
 import { toast, useApp } from '@/store/app-store';
 import { color, motion, spacing, type } from '@/theme/tokens';
+import { currentLang, dateLabel, pl, tr, whenLabel } from '@/i18n';
 
 import type { Reader, ReaderKey } from './readers';
 import { warnText } from './readers';
 
-const MSHORT = ['Я', 'Ф', 'М', 'А', 'М', 'И', 'И', 'А', 'С', 'О', 'Н', 'Д'];
+const MSHORT_RU = ['Я', 'Ф', 'М', 'А', 'М', 'И', 'И', 'А', 'С', 'О', 'Н', 'Д'];
+const MSHORT_EN = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
 export function WantCard({ place }: { place: Place }) {
   const inTrip = useApp((s) => s.trip.includes(place.id));
@@ -35,30 +37,30 @@ export function WantCard({ place }: { place: Place }) {
     <View style={styles.want}>
       <LinearGradient colors={[color.lime, color.lime, '#F5FFC8']} locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.wantHd}>
         <IconBubble name="mountain" bg={color.paper} />
-        <Text style={styles.wantH}>Хочешь сюда?</Text>
+        <Text style={styles.wantH}>{tr('Хочешь сюда?')}</Text>
       </LinearGradient>
-      <Text style={styles.wantP}>Посмотрите туры и трансферы или добавьте место в свой маршрут.</Text>
+      <Text style={styles.wantP}>{tr('Посмотрите туры и трансферы или добавьте место в свой маршрут.')}</Text>
       <View style={{ gap: 10, paddingHorizontal: 16 }}>
-        <Button label="Туры и трансферы" onPress={() => setTours(true)} />
+        <Button label={tr('Туры и трансферы')} onPress={() => setTours(true)} />
         <Button
-          label={inTrip ? 'Уже в маршруте ✓' : 'Добавить в маршрут'}
+          label={inTrip ? tr('Уже в маршруте ✓') : tr('Добавить в маршрут')}
           tone="grey"
           onPress={() => {
             const added = toggleTrip(place.id);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            toast(added ? 'Добавили в маршрут' : 'Убрали из маршрута', 'route');
+            toast(added ? tr('Добавили в маршрут') : tr('Убрали из маршрута'), 'route');
           }}
         />
       </View>
       <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
         <Button
-          label={been ? `Вы были здесь · ${new Date(been).toLocaleDateString('ru-RU')}` : 'Я здесь был'}
+          label={been ? tr('Вы были здесь · {date}', { date: dateLabel(been) }) : tr('Я здесь был')}
           icon={been ? 'check' : 'flag'}
           tone={been ? 'black' : 'outline'}
           onPress={() => {
             const on = toggleVisited(place.id);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            toast(on ? 'Отметили на вашей карте путешествий' : 'Отметку сняли', 'flag');
+            toast(on ? tr('Отметили на вашей карте путешествий') : tr('Отметку сняли'), 'flag');
           }}
         />
       </View>
@@ -71,7 +73,7 @@ function ToursSheet({ place, visible, onClose }: { place: Place; visible: boolea
   // в MVP — туры и трансферы из открытых данных места; в проде — каталог Voyz
   const T = (place.p.transport || []).filter((t) => /тур|экскурс|трансфер|водител|гид/i.test(t.mode || ''));
   return (
-    <Sheet visible={visible} onClose={onClose} title="Туры и трансферы">
+    <Sheet visible={visible} onClose={onClose} title={tr('Туры и трансферы')}>
       {T.length ? (
         T.map((t, i) => {
           const ct = String(t.contact || '');
@@ -83,8 +85,8 @@ function ToursSheet({ place, visible, onClose }: { place: Place; visible: boolea
               <RichText style={styles.itiP}>{`${t.mode} · ${cut(t.details, 160)}`}</RichText>
               {t.price ? <Text style={[styles.itiP, { fontFamily: 'Mulish_700Bold' }]}>{t.price}</Text> : null}
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                {tel ? <Chip small tone="lime" icon="phone" label="Позвонить" onPress={() => Linking.openURL(telHref(tel))} /> : null}
-                {url ? <Chip small icon="ext" label="Открыть" onPress={() => Linking.openURL(url)} /> : null}
+                {tel ? <Chip small tone="lime" icon="phone" label={tr('Позвонить')} onPress={() => Linking.openURL(telHref(tel))} /> : null}
+                {url ? <Chip small icon="ext" label={tr('Открыть')} onPress={() => Linking.openURL(url)} /> : null}
               </View>
             </View>
           );
@@ -92,11 +94,11 @@ function ToursSheet({ place, visible, onClose }: { place: Place; visible: boolea
       ) : (
         <View style={styles.empty}>
           <IconBubble name="tour" />
-          <Text style={styles.emptyB}>Туров пока не нашли</Text>
-          <Text style={styles.small}>Ниже в карточке — как добраться самостоятельно.</Text>
+          <Text style={styles.emptyB}>{tr('Туров пока не нашли')}</Text>
+          <Text style={styles.small}>{tr('Ниже в карточке — как добраться самостоятельно.')}</Text>
         </View>
       )}
-      <Text style={[styles.small, { marginTop: 8 }]}>Цены и наличие уточняйте у организатора — данные из открытых источников.</Text>
+      <Text style={[styles.small, { marginTop: 8 }]}>{tr('Цены и наличие уточняйте у организатора — данные из открытых источников.')}</Text>
     </Sheet>
   );
 }
@@ -105,10 +107,10 @@ export function SeasonBlock({ place, onRead }: { place: Place; onRead: () => voi
   const cur = new Date().getMonth() + 1;
   return (
     <View style={styles.sec}>
-      <SectionHeader title="Когда ехать" />
+      <SectionHeader title={tr('Когда ехать')} />
       {place.m.length ? (
-        <View style={styles.months} accessibilityLabel={`Сезон: ${place.s.when}`}>
-          {MSHORT.map((m, i) => {
+        <View style={styles.months} accessibilityLabel={tr('Сезон: {month}', { month: whenLabel(place.s.when) })}>
+          {(currentLang() === 'en' ? MSHORT_EN : MSHORT_RU).map((m, i) => {
             const on = place.m.includes(i + 1);
             return (
               <View key={i} style={[styles.month, on && { backgroundColor: color.lime }, i + 1 === cur && styles.monthNow]}>
@@ -119,7 +121,7 @@ export function SeasonBlock({ place, onRead }: { place: Place; onRead: () => voi
         </View>
       ) : null}
       <RichText style={styles.lead2}>{lead(place.p.season || place.when, 1)}</RichText>
-      <ReadMore label="Сезон, время суток, режим работы" onPress={onRead} />
+      <ReadMore label={tr('Сезон, время суток, режим работы')} onPress={onRead} />
     </View>
   );
 }
@@ -133,7 +135,7 @@ export function BringBlock({ place }: { place: Place }) {
   if (!items.length) return null;
   return (
     <View style={styles.sec}>
-      <SectionHeader title="Лучше взять с собой" />
+      <SectionHeader title={tr('Лучше взять с собой')} />
       <View style={styles.chips}>
         {items.map((t) => (
           <Chip key={t} icon={bringIcon(t)} label={t.charAt(0).toUpperCase() + t.slice(1)} />
@@ -150,7 +152,7 @@ export function ImportantBlock({ place, onRead }: { place: Place; onRead: () => 
     <View style={styles.important}>
       <View style={styles.impH}>
         <Icon name="warn" size={22} color={color.lime} />
-        <Text style={styles.impHT}>Важно</Text>
+        <Text style={styles.impHT}>{tr('Важно')}</Text>
       </View>
       {items.slice(0, 3).map((t, i) => (
         <RichText key={i} style={styles.impP} numStyle={{ color: color.lime }} linkColor={color.lime}>
@@ -159,7 +161,7 @@ export function ImportantBlock({ place, onRead }: { place: Place; onRead: () => 
       ))}
       {items.length > 3 ? (
         <View style={{ alignItems: 'center' }}>
-          <ReadMore light label={`Ещё ${items.length - 3} ${plural(items.length - 3, 'пункт', 'пункта', 'пунктов')}`} onPress={onRead} />
+          <ReadMore light label={tr('Ещё {n} {items}', { n: items.length - 3, items: pl(items.length - 3, 'пункт', 'пункта', 'пунктов') })} onPress={onRead} />
         </View>
       ) : null}
     </View>
@@ -171,7 +173,7 @@ export function StaysBlock({ place, onRead }: { place: Place; onRead: () => void
   if (!st.length && !place.stay) return null;
   return (
     <View style={styles.sec}>
-      <SectionHeader title="Где остановиться" />
+      <SectionHeader title={tr('Где остановиться')} />
       {!st.length ? (
         <RichText style={styles.lead2}>{lead(place.stay, 2)}</RichText>
       ) : (
@@ -203,14 +205,14 @@ export function StaysBlock({ place, onRead }: { place: Place; onRead: () => void
                     {cut(s.price, 60)}
                     {s.season ? ` · ${s.season}` : ''}
                   </Text>
-                  {tel ? <Chip small tone="lime" label="Связаться" onPress={() => Linking.openURL(telHref(tel))} /> : url ? <Chip small label="Подробнее" onPress={() => Linking.openURL(url)} /> : null}
+                  {tel ? <Chip small tone="lime" label={tr('Связаться')} onPress={() => Linking.openURL(telHref(tel))} /> : url ? <Chip small label={tr('Подробнее')} onPress={() => Linking.openURL(url)} /> : null}
                 </View>
               </View>
             );
           }}
         />
       )}
-      {place.stay ? <ReadMore label={st.length ? 'Все варианты ночлега' : 'Подробнее'} onPress={onRead} /> : null}
+      {place.stay ? <ReadMore label={st.length ? tr('Все варианты ночлега') : tr('Подробнее')} onPress={onRead} /> : null}
     </View>
   );
 }
@@ -220,7 +222,7 @@ export function FoodBlock({ place }: { place: Place }) {
   if (!F.length && !place.food) return null;
   return (
     <View style={styles.sec}>
-      <SectionHeader title="Что попробовать" />
+      <SectionHeader title={tr('Что попробовать')} />
       {place.food ? <RichText style={[styles.lead2, { textAlign: 'center' }]}>{lead(place.food, 1)}</RichText> : null}
       {F.length ? (
         <FlatList
@@ -253,7 +255,7 @@ export function HikesBlock({ place, onRead }: { place: Place; onRead: () => void
   if (!H.length) return null;
   return (
     <View style={styles.sec}>
-      <SectionHeader title="Прогулки и тропы" />
+      <SectionHeader title={tr('Прогулки и тропы')} />
       {H.slice(0, 3).map((h, i) => (
         <View key={i} style={styles.hike}>
           <Text style={styles.hikeB}>{h.name}</Text>
@@ -261,14 +263,14 @@ export function HikesBlock({ place, onRead }: { place: Place; onRead: () => void
             {h.route}
           </Text>
           <View style={styles.chips}>
-            {h.km ? <Chip small tone="lime" label={`${h.km} км`} /> : null}
-            {h.gain_m ? <Chip small label={`↑ ${cut(h.gain_m, 18)} м`} /> : null}
+            {h.km ? <Chip small tone="lime" label={tr('{km} км', { km: h.km })} /> : null}
+            {h.gain_m ? <Chip small label={tr('↑ {m} м', { m: cut(h.gain_m, 18) })} /> : null}
             {h.time ? <Chip small label={cut(h.time, 18)} /> : null}
             {h.difficulty ? <Chip small label={h.difficulty} /> : null}
           </View>
         </View>
       ))}
-      {H.length > 3 ? <ReadMore label={`Все тропы (${H.length})`} onPress={onRead} /> : null}
+      {H.length > 3 ? <ReadMore label={tr('Все тропы ({n})', { n: H.length })} onPress={onRead} /> : null}
     </View>
   );
 }
@@ -281,7 +283,7 @@ export function UsefulBlock({ readers, onRead }: { readers: Partial<Record<Reade
   if (!keys.length) return null;
   return (
     <View style={styles.sec}>
-      <SectionHeader title="Полезное" />
+      <SectionHeader title={tr('Полезное')} />
       <View style={styles.glist}>
         {keys.map((k, i) => {
           const r = readers[k]!;
@@ -314,10 +316,10 @@ export function NearbyBlock({ place, onMap }: { place: Place; onMap: () => void 
   if (!n.length) return null;
   return (
     <View style={[styles.sec, { gap: 10 }]}>
-      <SectionHeader title="Рядом" more="Показать на карте" onMore={onMap} />
+      <SectionHeader title={tr('Рядом')} more={tr('Показать на карте')} onMore={onMap} />
       {n.map((x) => {
         const q = getPlace(x.id)!;
-        return <RowPlaceCard key={x.id} place={q} sub={`≈ ${fmtKm(x.km)} км по прямой · ${q.cat}`} />;
+        return <RowPlaceCard key={x.id} place={q} sub={tr('≈ {km} км по прямой · {cat}', { km: fmtKm(x.km), cat: catLabel(q.cat) })} />;
       })}
     </View>
   );
@@ -328,19 +330,20 @@ export function TrustBlock({ place, visible, onRead }: { place: Place; visible: 
   const total = placesOf(place.c).length;
   return (
     <View style={styles.sec}>
-      <SectionHeader title="Проверка и источники" />
+      <SectionHeader title={tr('Проверка и источники')} />
       <View style={styles.trust}>
         {visible ? <IndexRing value={place.idx || 0} size={86} stroke={8} animate /> : <View style={{ width: 86, height: 86 }} />}
         <View style={{ flex: 1, gap: 6 }}>
-          <Bar label="Подтверждено полей" v={place.conf || 0} max={34} go={visible} />
-          <Bar label="Насыщенность" v={place.rich || 0} max={10} go={visible} />
-          <Bar label="Практика: дорога, ночлег" v={place.prac || 0} max={10} go={visible} />
+          <Bar label={tr('Подтверждено полей')} v={place.conf || 0} max={34} go={visible} />
+          <Bar label={tr('Насыщенность')} v={place.rich || 0} max={10} go={visible} />
+          <Bar label={tr('Практика: дорога, ночлег')} v={place.prac || 0} max={10} go={visible} />
         </View>
       </View>
       <Text style={styles.small}>
-        Индекс полноты 0–100.{place.rank ? ` №${place.rank} из ${total} в разделе «${place.c === 'kg' ? 'Кыргызстан' : 'Алтай'}».` : ''}
+        {tr('Индекс полноты 0–100.')}
+        {place.rank ? tr(' №{rank} из {total} в разделе «{country}».', { rank: place.rank, total, country: place.c === 'kg' ? tr('Кыргызстан') : tr('Алтай') }) : ''}
       </Text>
-      <ReadMore label="Источники, спорные моменты, что не подтверждено" onPress={onRead} />
+      <ReadMore label={tr('Источники, спорные моменты, что не подтверждено')} onPress={onRead} />
     </View>
   );
 }
@@ -372,21 +375,21 @@ export function ChangeReport({ place }: { place: Place }) {
   const add = useApp((s) => s.addReport);
   return (
     <View style={styles.change}>
-      <Text style={styles.changeH}>Заметили изменения?</Text>
-      <Text style={styles.changeP}>Помогите другим путешественникам — отметьте, что поменялось на месте</Text>
+      <Text style={styles.changeH}>{tr('Заметили изменения?')}</Text>
+      <Text style={styles.changeP}>{tr('Помогите другим путешественникам — отметьте, что поменялось на месте')}</Text>
       <View style={[styles.chips, { justifyContent: 'center', marginBottom: 16 }]}>
         {CHANGES.map((t) => (
-          <Chip key={t} tone="white" label={t} on={sel.includes(t)} onPress={() => setSel((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]))} />
+          <Chip key={t} tone="white" label={tr(t)} on={sel.includes(t)} onPress={() => setSel((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]))} />
         ))}
       </View>
       <Button
-        label="Отправить"
+        label={tr('Отправить')}
         tone="black"
         onPress={() => {
-          if (!sel.length) return toast('Выберите, что изменилось', 'info');
+          if (!sel.length) return toast(tr('Выберите, что изменилось'), 'info');
           add(place.id, sel);
           setSel([]);
-          toast('Спасибо! Отметка сохранена', 'check');
+          toast(tr('Спасибо! Отметка сохранена'), 'check');
         }}
       />
     </View>
@@ -397,7 +400,7 @@ export function Footer() {
   return (
     <View style={{ alignItems: 'center', paddingTop: 46, paddingBottom: 10, paddingHorizontal: 20 }}>
       <VoyzLogo width={280} fill="#151515" />
-      <Text style={{ fontFamily: 'Mulish_400Regular', fontSize: 15, color: '#222', marginTop: 12 }}>Больше, чем просто поездки</Text>
+      <Text style={{ fontFamily: 'Mulish_400Regular', fontSize: 15, color: '#222', marginTop: 12 }}>{tr('Больше, чем просто поездки')}</Text>
     </View>
   );
 }

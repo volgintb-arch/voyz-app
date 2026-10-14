@@ -16,7 +16,7 @@ import type { MapCamera, MapMode, MapPoint, VoyzMapRef } from '@/components/map/
 import { VoyzMap } from '@/components/map/voyz-map';
 import { Sheet } from '@/components/sheet';
 import { Button, Chip } from '@/components/ui';
-import { catShort, getPlace, photoSource, placesOf } from '@/data/places';
+import { catLabel, catShort, getPlace, photoSource, placesOf } from '@/data/places';
 import type { LatLng, Place } from '@/data/types';
 import { useClusters } from '@/geo/clusters';
 import { HUB_LABELS } from '@/geo/geo-data';
@@ -28,6 +28,7 @@ import { fmtH, fmtKm } from '@/lib/text';
 import { toast, useApp } from '@/store/app-store';
 import { useAppSize } from '@/lib/layout';
 import { color, elevation, type } from '@/theme/tokens';
+import { dataLabel, tr } from '@/i18n';
 
 const CARD_W = 300;
 const GAP = 10;
@@ -116,13 +117,13 @@ export default function MapTab() {
   const locate = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return toast('Нет доступа к геопозиции', 'locate');
+      if (status !== 'granted') return toast(tr('Нет доступа к геопозиции'), 'locate');
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const ll: LatLng = [pos.coords.latitude, pos.coords.longitude];
       setMe(ll);
       mapRef.current?.flyTo(ll, 11);
     } catch {
-      toast('Не удалось определить место', 'locate');
+      toast(tr('Не удалось определить место'), 'locate');
     }
   };
 
@@ -188,15 +189,15 @@ export default function MapTab() {
         <View style={[styles.top, { top: insets.top + 10 }]} pointerEvents="box-none">
           <Glass tint="rgba(255,255,255,.72)" style={styles.search}>
             <Icon name="search" size={19} color={color.black} />
-            <TextInput value={q} onChangeText={setQ} placeholder="Найти на карте" placeholderTextColor={color.muted} style={styles.input} accessibilityLabel="Найти на карте" />
+            <TextInput value={q} onChangeText={setQ} placeholder={tr('Найти на карте')} placeholderTextColor={color.muted} style={styles.input} accessibilityLabel={tr('Найти на карте')} />
             {q ? (
-              <Pressable onPress={() => setQ('')} hitSlop={10} accessibilityLabel="Очистить">
+              <Pressable onPress={() => setQ('')} hitSlop={10} accessibilityLabel={tr('Очистить')}>
                 <Icon name="close" size={18} color={color.muted} />
               </Pressable>
             ) : null}
           </Glass>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 10 }}>
-            {[['all', 'Все', 'map'] as const, ...cats.map((k) => [k, k, catIcon(k)] as const)].map(([k, label, ic]) => (
+            {[['all', tr('Все'), 'map'] as const, ...cats.map((k) => [k, tr(k), catIcon(k)] as const)].map(([k, label, ic]) => (
               <Pressable key={k} onPress={() => setCat(k)} accessibilityRole="button" accessibilityState={{ selected: cat === k }}>
                 <Glass tint={cat === k ? 'rgba(0,0,0,.92)' : 'rgba(255,255,255,.72)'} dark={cat === k} style={styles.chip}>
                   <Icon name={ic as IconName} size={15} color={cat === k ? color.lime : color.black} />
@@ -210,25 +211,25 @@ export default function MapTab() {
 
       <View style={[styles.ctl, { top: insets.top + (driving ? 110 : 124) }]}>
         <Glass tint="rgba(255,255,255,.78)" style={[styles.zoomBox, elevation.floating]}>
-          <CtlBtn ic="plus" label="Приблизить" onPress={() => onCtl('in')} />
+          <CtlBtn ic="plus" label={tr('Приблизить')} onPress={() => onCtl('in')} />
           <View style={styles.zoomLine} />
-          <CtlBtn ic="minus" label="Отдалить" onPress={() => onCtl('out')} />
+          <CtlBtn ic="minus" label={tr('Отдалить')} onPress={() => onCtl('out')} />
         </Glass>
         {Math.abs(cam.bearing) > 1 || cam.pitch > 5 ? (
-          <RoundCtl label="На север" onPress={() => onCtl('north')}>
+          <RoundCtl label={tr('На север')} onPress={() => onCtl('north')}>
             <View style={{ transform: [{ rotate: `${-cam.bearing}deg` }] }}>
               <Icon name="compass" size={22} />
             </View>
           </RoundCtl>
         ) : null}
-        <RoundCtl label="Где я" onPress={() => onCtl('locate')}>
+        <RoundCtl label={tr('Где я')} onPress={() => onCtl('locate')}>
           <Icon name="locate" size={21} />
         </RoundCtl>
-        <RoundCtl label="Слои и рельеф" onPress={() => onCtl('layers')} on={mode === 'detail' || relief || terrain3d}>
+        <RoundCtl label={tr('Слои и рельеф')} onPress={() => onCtl('layers')} on={mode === 'detail' || relief || terrain3d}>
           <Icon name="layers" size={21} />
         </RoundCtl>
         {!driving ? (
-          <RoundCtl label="Показать всё" onPress={() => onCtl('fit')}>
+          <RoundCtl label={tr('Показать всё')} onPress={() => onCtl('fit')}>
             <Icon name="fit" size={21} />
           </RoundCtl>
         ) : null}
@@ -243,24 +244,24 @@ export default function MapTab() {
               </Text>
               <Text style={styles.navSub}>
                 {driving
-                  ? `Осталось ≈${fmtKm(act.leftKm ?? 0)} км по прямой`
-                  : `≈${fmtKm(act.route.km)} км · ${fmtH(act.route.min / 60)} по дорогам`}
+                  ? tr('Осталось ≈{km} км по прямой', { km: fmtKm(act.leftKm ?? 0) })
+                  : tr('≈{km} км · {h} по дорогам', { km: fmtKm(act.route.km), h: fmtH(act.route.min / 60) })}
               </Text>
             </View>
-            <Pressable onPress={() => nav.setVoice(!nav.voice)} style={styles.navIcon} accessibilityRole="switch" accessibilityState={{ checked: nav.voice }} accessibilityLabel="Голосовые подсказки">
+            <Pressable onPress={() => nav.setVoice(!nav.voice)} style={styles.navIcon} accessibilityRole="switch" accessibilityState={{ checked: nav.voice }} accessibilityLabel={tr('Голосовые подсказки')}>
               <Icon name={nav.voice ? 'signal' : 'minus'} size={18} />
             </Pressable>
-            <Pressable onPress={nav.stop} style={styles.navIcon} accessibilityRole="button" accessibilityLabel="Закрыть маршрут">
+            <Pressable onPress={nav.stop} style={styles.navIcon} accessibilityRole="button" accessibilityLabel={tr('Закрыть маршрут')}>
               <Icon name="close" size={18} />
             </Pressable>
           </View>
           {!driving ? (
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-              <Button label="Поехали" icon="car" style={{ flex: 1 }} onPress={nav.start} />
-              <Button label="Карточка" tone="grey" style={{ flex: 1 }} onPress={() => sel && router.push({ pathname: '/place/[id]', params: { id: sel } })} />
+              <Button label={tr('Поехали')} icon="car" style={{ flex: 1 }} onPress={nav.start} />
+              <Button label={tr('Карточка')} tone="grey" style={{ flex: 1 }} onPress={() => sel && router.push({ pathname: '/place/[id]', params: { id: sel } })} />
             </View>
           ) : null}
-          <Text style={styles.navNote}>Онлайн-маршрут OSRM. Для грунтовок сверяйтесь с навигатором и знаками.</Text>
+          <Text style={styles.navNote}>{tr('Онлайн-маршрут OSRM. Для грунтовок сверяйтесь с навигатором и знаками.')}</Text>
         </View>
       ) : (
         <FlatList
@@ -281,25 +282,29 @@ export default function MapTab() {
           }}
           ListEmptyComponent={
             <View style={[styles.card, { width: width - 40, justifyContent: 'center' }]}>
-              <Text style={type.label}>Ничего не нашли — смените фильтр</Text>
+              <Text style={type.label}>{tr('Ничего не нашли — смените фильтр')}</Text>
             </View>
           }
           renderItem={({ item: p }) => <PeekCard place={p} on={p.id === sel} onPress={() => (p.id === sel ? router.push({ pathname: '/place/[id]', params: { id: p.id } }) : select(p.id, true))} onRoute={nav.preview} loading={nav.state.phase === 'loading' && p.id === sel} />}
         />
       )}
 
-      <Sheet visible={layers} onClose={() => setLayers(false)} title="Слои карты">
-        <Text style={styles.lt}>Карта</Text>
+      <Sheet visible={layers} onClose={() => setLayers(false)} title={tr('Слои карты')}>
+        <Text style={styles.lt}>{tr('Карта')}</Text>
         <View style={styles.modes}>
-          <ModeCard on={mode === 'scheme'} title="Схема" sub="Встроенная, работает без сети" icon="map" onPress={() => setMode('scheme')} />
-          <ModeCard on={mode === 'detail'} title="Подробная" sub="Сёла, тропы, перевалы — нужен интернет" icon="globe" onPress={() => setMode('detail')} />
+          <ModeCard on={mode === 'scheme'} title={tr('Схема')} sub="Встроенная, работает без сети" icon="map" onPress={() => setMode('scheme')} />
+          <ModeCard on={mode === 'detail'} title={tr('Подробная')} sub="Сёла, тропы, перевалы — нужен интернет" icon="globe" onPress={() => setMode('detail')} />
         </View>
-        <Text style={styles.lt}>Рельеф</Text>
+        <Text style={styles.lt}>{tr('Рельеф')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          <Chip label="Тени гор" icon="mountain" on={relief} onPress={() => setRelief((r) => !r)} />
-          <Chip label="3D-наклон" icon="pass" on={terrain3d} onPress={() => setTerrain3d((t) => !t)} />
+          <Chip label={tr('Тени гор')} icon="mountain" on={relief} onPress={() => setRelief((r) => !r)} />
+          <Chip label={tr('3D-наклон')} icon="pass" on={terrain3d} onPress={() => setTerrain3d((t) => !t)} />
         </View>
-        <Text style={styles.ln}>Тени гор встроены в приложение и работают без сети. Подробная карта и 3D-наклон загружаются из интернета.{'\n'}{ONLINE.attribution}</Text>
+        <Text style={styles.ln}>
+          {tr('Тени гор встроены в приложение и работают без сети. Подробная карта и 3D-наклон загружаются из интернета.')}
+          {'\n'}
+          {ONLINE.attribution}
+        </Text>
       </Sheet>
     </View>
   );
@@ -312,7 +317,7 @@ function PeekCard({ place: p, on, onPress, onRoute, loading }: { place: Place; o
   const src = photoSource(p);
   return (
     <View style={[styles.card, elevation.floating, on && { borderColor: color.black }]}>
-      <Pressable onPress={onPress} style={styles.cardMain} accessibilityRole="button" accessibilityLabel={on ? `Открыть: ${p.name}` : p.name}>
+      <Pressable onPress={onPress} style={styles.cardMain} accessibilityRole="button" accessibilityLabel={on ? tr('Открыть: {name}', { name: p.name }) : p.name}>
         {src ? (
           <Image source={src} style={styles.th} contentFit="cover" />
         ) : (
@@ -325,12 +330,12 @@ function PeekCard({ place: p, on, onPress, onRoute, loading }: { place: Place; o
             {p.name}
           </Text>
           <Text style={styles.cardSub} numberOfLines={1}>
-            {p.cat} · {p.s.acc}
+            {catLabel(p.cat)} · {dataLabel(p.s.acc)}
           </Text>
         </View>
       </Pressable>
       {on ? (
-        <Pressable onPress={onRoute} style={[styles.go, { width: 44, height: 44, borderRadius: 22 }]} accessibilityRole="button" accessibilityLabel="Маршрут от меня">
+        <Pressable onPress={onRoute} style={[styles.go, { width: 44, height: 44, borderRadius: 22 }]} accessibilityRole="button" accessibilityLabel={tr('Маршрут от меня')}>
           <Icon name={loading ? 'dot' : 'route'} size={20} strokeWidth={2} />
         </Pressable>
       ) : (

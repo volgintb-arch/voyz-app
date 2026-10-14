@@ -36,6 +36,7 @@ import { cut, mmss } from '@/lib/text';
 import { placeUrl, shareLink } from '@/lib/web-app';
 import { toast } from '@/store/app-store';
 import { color, motion, radius } from '@/theme/tokens';
+import { currentLang, tr } from '@/i18n';
 
 const SECTIONS: [string, string][] = [
   ['ov', 'Обзор'],
@@ -44,6 +45,7 @@ const SECTIONS: [string, string][] = [
   ['stay', 'Ночлег'],
   ['site', 'На месте'],
   ['src', 'Проверка'],
+  // подписи переводятся при выводе: tr(n)
 ];
 
 export default function PlaceScreen() {
@@ -95,7 +97,7 @@ export default function PlaceScreen() {
   if (!place) {
     return (
       <View style={[styles.root, { paddingTop: insets.top + 60, alignItems: 'center' }]}>
-        <Text style={{ fontFamily: 'Mulish_600SemiBold', fontSize: 16, color: color.paper }}>Место не найдено</Text>
+        <Text style={{ fontFamily: 'Mulish_600SemiBold', fontSize: 16, color: color.paper }}>{tr('Место не найдено')}</Text>
       </View>
     );
   }
@@ -114,7 +116,7 @@ export default function PlaceScreen() {
   // ссылка на веб-версию — откроется у любого получателя, даже без установленного приложения
   const share = async () => {
     const r = await shareLink(place.name, `${place.name} — ${cut(place.short, 140)}`, placeUrl(place.id));
-    if (r === 'copied') toast('Ссылка скопирована', 'link');
+    if (r === 'copied') toast(tr('Ссылка скопирована'), 'link');
   };
   const secs = audioSeconds(place.id);
   const r = reader ? readers[reader] ?? null : null;
@@ -127,6 +129,12 @@ export default function PlaceScreen() {
           <Hero place={place} scrollY={y} onPhoto={setViewer} onMapThumb={() => jump('route')} />
         </Animated.View>
         <InfoGrid place={place} />
+        {currentLang() === 'en' ? (
+          <View style={styles.langNote}>
+            <Icon name="info" size={16} color={color.lime} />
+            <Text style={styles.langNoteT}>{tr('Описание места пока на русском')}</Text>
+          </View>
+        ) : null}
         <View onLayout={(e) => setAnchor('ov', e, false)}>
           <WhySection place={place} onRead={() => setReader('guide')} />
         </View>
@@ -167,9 +175,9 @@ export default function PlaceScreen() {
       {/* кнопки над hero: назад; поделиться и сердце — одной стеклянной группой */}
       {!ui.compact ? (
         <View style={[styles.topBtns, { top: insets.top + 10 }]} pointerEvents="box-none">
-          <RoundGlass onPress={() => router.back()} label="Назад" icon="back" />
+          <RoundGlass onPress={() => router.back()} label={tr('Назад')} icon="back" />
           <GlassGroup spacing={12}>
-            <RoundGlass onPress={share} label="Поделиться" icon="share" />
+            <RoundGlass onPress={share} label={tr('Поделиться')} icon="share" />
             <Glass clear dark interactive style={styles.glassBtn}>
               <HeartButton id={place.id} size={22} />
             </Glass>
@@ -181,7 +189,7 @@ export default function PlaceScreen() {
       <Animated.View style={[styles.compactWrap, compactStyle]} pointerEvents={ui.compact ? 'auto' : 'none'}>
         <Glass dark={!ui.light} tint={ui.light ? 'rgba(255,255,255,.86)' : 'rgba(10,10,10,.72)'} style={[styles.compact, { paddingTop: insets.top + 6 }]}>
           <View style={styles.compactRow}>
-            <Pressable onPress={() => router.back()} style={[styles.smallBtn, { backgroundColor: 'rgba(127,127,127,.18)' }]} accessibilityRole="button" accessibilityLabel="Назад">
+            <Pressable onPress={() => router.back()} style={[styles.smallBtn, { backgroundColor: 'rgba(127,127,127,.18)' }]} accessibilityRole="button" accessibilityLabel={tr('Назад')}>
               <Icon name="back" size={20} color={ui.light ? color.black : color.paper} />
             </Pressable>
             <Text style={[styles.ttl, { color: ui.light ? color.black : color.paper }]} numberOfLines={1}>
@@ -194,7 +202,7 @@ export default function PlaceScreen() {
           <ScrollView ref={nav} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.secnav}>
             {SECTIONS.map(([k, n]) => (
               <Pressable key={k} onPress={() => jump(k)} style={[styles.navChip, ui.on === k && { backgroundColor: color.lime }]} accessibilityRole="button" accessibilityState={{ selected: ui.on === k }}>
-                <Text style={[styles.navChipT, { color: ui.on === k ? color.black : ui.light ? color.black : color.paper }]}>{n}</Text>
+                <Text style={[styles.navChipT, { color: ui.on === k ? color.black : ui.light ? color.black : color.paper }]}>{tr(n)}</Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -214,7 +222,7 @@ export default function PlaceScreen() {
               }
             : undefined
         }
-        listenLabel={secs ? `Послушать · ${mmss(secs)}` : 'Послушать'}
+        listenLabel={secs ? tr('Послушать · {t}', { t: mmss(secs) }) : tr('Послушать')}
       />
     </View>
   );
@@ -233,6 +241,8 @@ function RoundGlass({ onPress, label, icon }: { onPress: () => void; label: stri
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.black },
   white: { backgroundColor: color.paper, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, marginTop: -34 },
+  langNote: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 20, marginTop: 12, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, backgroundColor: '#151515' },
+  langNoteT: { fontFamily: 'Mulish_500Medium', fontSize: 13, color: color.mutedOnDark, flex: 1 },
   topBtns: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
   glassBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   compactWrap: { position: 'absolute', left: 0, right: 0, top: 0 },

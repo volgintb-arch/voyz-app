@@ -7,7 +7,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '@/components/icon';
 import { PhotoShade } from '@/components/photo-shade';
 import { HeartButton, IndexRing } from '@/components/ui';
-import { locLine, photoSource } from '@/data/places';
+import { catLabel, locLabel, photoSource } from '@/data/places';
+import { dataLabel, whenLabel } from '@/i18n';
 import type { Place } from '@/data/types';
 import { catIcon } from '@/lib/icon-rules';
 import { color, radius, type } from '@/theme/tokens';
@@ -63,10 +64,10 @@ export function BigPlaceCard({ place }: { place: Place }) {
         </Text>
         <View style={styles.locRow}>
           <Icon name="pin" size={14} color={color.mutedOnDark} />
-          <Text style={styles.loc}>{locLine(place)}</Text>
+          <Text style={styles.loc}>{locLabel(place)}</Text>
         </View>
         <View style={styles.chips}>
-          {[place.s.diff, place.s.when, place.s.acc].filter(Boolean).map((t) => (
+          {[dataLabel(place.s.diff), whenLabel(place.s.when), dataLabel(place.s.acc)].filter(Boolean).map((t) => (
             <Text key={t} style={styles.chip}>
               {t}
             </Text>
@@ -86,7 +87,7 @@ export function RowPlaceCard({ place, sub, right }: { place: Place; sub?: string
           {place.name}
         </Text>
         <Text style={styles.rowSub} numberOfLines={2}>
-          {sub ?? `${place.cat} · ${locLine(place)}`}
+          {sub ?? `${catLabel(place.cat)} · ${locLabel(place)}`}
         </Text>
         <View style={styles.go}>
           <Icon name="arrow" size={14} color={color.black} strokeWidth={2.2} />
@@ -108,7 +109,7 @@ export function MiniPlaceCard({ place }: { place: Place }) {
           {place.name}
         </Text>
         <Text style={styles.miniSub} numberOfLines={1}>
-          {place.s.diff} · {place.s.acc}
+          {dataLabel(place.s.diff)} · {dataLabel(place.s.acc)}
         </Text>
       </View>
     </PlaceLink>

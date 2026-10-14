@@ -8,6 +8,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { Icon, type IconName } from '@/components/icon';
 import { toast, useApp } from '@/store/app-store';
 import { color, motion, spacing, type } from '@/theme/tokens';
+import { tr } from '@/i18n';
 
 export function SectionHeader({ title, more, onMore, light, left }: { title: string; more?: string; onMore?: () => void; light?: boolean; left?: boolean }) {
   const alignLeft = left || (!!more && title.length > 11);
@@ -94,13 +95,13 @@ export function HeartButton({ id, size = 22, tint = color.paper, style, onDark =
     e?.preventDefault?.();
     const added = toggle(id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toast(added ? 'Сохранили в избранное' : 'Убрали из избранного', 'heart');
+    toast(added ? tr('Сохранили в избранное') : tr('Убрали из избранного'), 'heart');
     if (!reduce) sc.set(withSequence(withTiming(1.28, { duration: 140 }), withSpring(1, motion.spring)));
   };
   const fill = saved ? (onDark ? color.lime : color.black) : 'none';
   const stroke = saved ? (onDark ? color.lime : color.black) : tint;
   return (
-    <Pressable onPress={on} hitSlop={8} accessibilityRole="button" accessibilityLabel={saved ? 'Убрать из избранного' : 'В избранное'} style={style}>
+    <Pressable onPress={on} hitSlop={8} accessibilityRole="button" accessibilityLabel={saved ? tr('Убрать из избранного') : tr('В избранное')} style={style}>
       <Animated.View style={st}>
         <Icon name="heart" size={size} color={stroke} fill={fill} />
       </Animated.View>

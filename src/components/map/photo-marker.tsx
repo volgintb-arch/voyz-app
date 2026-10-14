@@ -8,6 +8,7 @@ import { isTop, photoSource } from '@/data/places';
 import type { Place } from '@/data/types';
 import { catIcon } from '@/lib/icon-rules';
 import { color } from '@/theme/tokens';
+import { tr } from '@/i18n';
 
 export function PhotoMarker({ place, selected, visited }: { place: Place; selected?: boolean; visited?: boolean }) {
   const size = selected ? 58 : 42;
@@ -25,7 +26,7 @@ export function PhotoMarker({ place, selected, visited }: { place: Place; select
         )}
       </View>
       {visited ? (
-        <View style={styles.check} accessibilityLabel="Вы здесь были">
+        <View style={styles.check} accessibilityLabel={tr('Вы здесь были')}>
           <Icon name="check" size={11} strokeWidth={3} />
         </View>
       ) : null}
@@ -42,7 +43,7 @@ export function PhotoMarker({ place, selected, visited }: { place: Place; select
 export function ClusterMarker({ cover, count }: { cover: Place; count: number }) {
   const src = photoSource(cover);
   return (
-    <View style={styles.cl} accessibilityLabel={`${count} мест рядом`}>
+    <View style={styles.cl} accessibilityLabel={`${count}`}>
       <View style={[styles.ph, { width: 50, height: 50, borderRadius: 25, borderColor: color.paper, borderWidth: 3 }]}>
         {src ? <Image source={src} style={StyleSheet.absoluteFill} contentFit="cover" /> : <View style={[StyleSheet.absoluteFill, styles.noPh]} />}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,.25)' }]} />

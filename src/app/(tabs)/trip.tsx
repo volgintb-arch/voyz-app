@@ -14,7 +14,7 @@ import { RowPlaceCard } from '@/components/place-cards';
 import { PassportPane } from '@/components/passport/passport-pane';
 import { StopRow } from '@/components/trip/stop-row';
 import { Button, Chip, IconBubble } from '@/components/ui';
-import { getPlace, meta, plural } from '@/data/places';
+import { getPlace, meta } from '@/data/places';
 import type { LatLng, Place } from '@/data/types';
 import type { MapLine } from '@/geo/map-style';
 import { sliceLine } from '@/geo/map-style';
@@ -23,6 +23,7 @@ import { optimizeOrder, planTrip, sampleTrip } from '@/geo/trip';
 import { fmtH, fmtKm } from '@/lib/text';
 import { toast, useApp } from '@/store/app-store';
 import { color, radius, spacing, type } from '@/theme/tokens';
+import { pl, tr } from '@/i18n';
 
 export default function TripTab() {
   const insets = useSafeAreaInsets();
@@ -38,15 +39,15 @@ export default function TripTab() {
     <ScrollView style={{ flex: 1, backgroundColor: color.black }} contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 110 }}>
       <View style={{ paddingTop: insets.top + 18, paddingHorizontal: spacing.screenGutter, paddingBottom: 60 }}>
         <Text style={styles.title} accessibilityRole="header">
-          Мой маршрут
+          {tr('Мой маршрут')}
         </Text>
-        <Text style={styles.sub}>{meta.countries[country].name} · соберите поездку из сохранённых мест</Text>
+        <Text style={styles.sub}>{tr('{country} · соберите поездку из сохранённых мест', { country: tr(meta.countries[country].name) })}</Text>
       </View>
       <View style={styles.sheet}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
-          <Chip label={`Маршрут${plan.places.length ? ` ${plan.places.length}` : ''}`} icon="route" on={tab === 'route'} onPress={() => setTab('route')} />
-          <Chip label={`Избранное${savedHere.length ? ` ${savedHere.length}` : ''}`} icon="heart" on={tab === 'saved'} onPress={() => setTab('saved')} />
-          <Chip label={`Был${beenN ? ` ${beenN}` : ''}`} icon="flag" on={tab === 'been'} onPress={() => setTab('been')} />
+          <Chip label={`${tr('Маршрут')}${plan.places.length ? ` ${plan.places.length}` : ''}`} icon="route" on={tab === 'route'} onPress={() => setTab('route')} />
+          <Chip label={`${tr('Избранное')}${savedHere.length ? ` ${savedHere.length}` : ''}`} icon="heart" on={tab === 'saved'} onPress={() => setTab('saved')} />
+          <Chip label={`${tr('Был')}${beenN ? ` ${beenN}` : ''}`} icon="flag" on={tab === 'been'} onPress={() => setTab('been')} />
         </View>
         {tab === 'route' ? <RoutePane plan={plan} /> : tab === 'saved' ? <SavedPane places={savedHere} /> : <PassportPane />}
       </View>
@@ -77,10 +78,10 @@ function RoutePane({ plan }: { plan: ReturnType<typeof planTrip> }) {
     return (
       <View style={styles.empty}>
         <IconBubble name="route" size={48} />
-        <Text style={styles.emptyB}>Маршрут пока пуст</Text>
-        <Text style={styles.emptyT}>Нажмите «Добавить в маршрут» в карточке места — мы посчитаем расстояния по дорогам и разобьём поездку на дни.</Text>
+        <Text style={styles.emptyB}>{tr('Маршрут пока пуст')}</Text>
+        <Text style={styles.emptyT}>{tr('Нажмите «Добавить в маршрут» в карточке места — мы посчитаем расстояния по дорогам и разобьём поездку на дни.')}</Text>
         <Button
-          label="Собрать пример"
+          label={tr('Собрать пример')}
           icon="sparkle"
           style={{ marginTop: 18, alignSelf: 'stretch' }}
           onPress={() => {
@@ -88,7 +89,7 @@ function RoutePane({ plan }: { plan: ReturnType<typeof planTrip> }) {
             setTrip([...trip, ...add]);
             const st = useApp.getState();
             add.forEach((id) => !st.saved.includes(id) && st.toggleSaved(id));
-            toast('Собрали пример маршрута', 'sparkle');
+            toast(tr('Собрали пример маршрута'), 'sparkle');
           }}
         />
       </View>
@@ -117,18 +118,18 @@ function RoutePane({ plan }: { plan: ReturnType<typeof planTrip> }) {
         <VoyzMap key={ids.join(',')} country={country} lines={lines} points={points} fit={fit} padding={{ top: 30, left: 30, right: 30, bottom: 30 }} style={StyleSheet.absoluteFill} />
       </View>
       <View style={styles.sum}>
-        <Stat v={String(plan.places.length)} l={plural(plan.places.length, 'место', 'места', 'мест')} />
-        <Stat v={plan.km ? `≈${fmtKm(plan.km)}` : '—'} l="км по дорогам" />
-        <Stat v={String(plan.days.length)} l={plural(plan.days.length, 'день', 'дня', 'дней')} />
+        <Stat v={String(plan.places.length)} l={pl(plan.places.length, 'место', 'места', 'мест')} />
+        <Stat v={plan.km ? `≈${fmtKm(plan.km)}` : '—'} l={tr('км по дорогам')} />
+        <Stat v={String(plan.days.length)} l={pl(plan.days.length, 'день', 'дня', 'дней')} />
       </View>
       <Text style={styles.note}>
-        ≈{fmtH(plan.driveH)} за рулём без учёта остановок. Расстояния — по схеме основных дорог{plan.approx ? ', часть участков — оценка' : ''}; перед выездом сверяйтесь с навигатором.
+        ≈{fmtH(plan.driveH)} за рулём без учёта остановок. Расстояния — по схеме основных дорог{plan.approx ? tr(', часть участков — оценка') : ''}; перед выездом сверяйтесь с навигатором.
       </Text>
 
       {plan.days.map((day, d) => (
         <View key={d}>
           <View style={styles.dayHd}>
-            <Text style={styles.dayT}>День {d + 1}</Text>
+            <Text style={styles.dayT}>{tr('День {n}', { n: d + 1 })}</Text>
             <View style={styles.dayLine} />
           </View>
           {day.map((i) => {
@@ -139,8 +140,9 @@ function RoutePane({ plan }: { plan: ReturnType<typeof planTrip> }) {
                   <View style={styles.leg}>
                     <Icon name="car" size={16} color={color.muted} />
                     <Text style={styles.legT}>
-                      {day[0] === i ? 'переезд ' : ''}≈{fmtKm(leg.km)} км · {fmtH(leg.km / AVG_SPEED_KMH)}
-                      {day[0] === i ? ' — с утра' : ''}
+                      {day[0] === i
+                        ? tr('переезд ≈{km} км · {h} — с утра', { km: fmtKm(leg.km), h: fmtH(leg.km / AVG_SPEED_KMH) })
+                        : tr('≈{km} км · {h}', { km: fmtKm(leg.km), h: fmtH(leg.km / AVG_SPEED_KMH) })}
                     </Text>
                   </View>
                 ) : null}
@@ -152,7 +154,7 @@ function RoutePane({ plan }: { plan: ReturnType<typeof planTrip> }) {
                   onMove={move}
                   onRemove={() => {
                     toggleTrip(plan.places[i].id);
-                    toast('Убрали из маршрута', 'route');
+                    toast(tr('Убрали из маршрута'), 'route');
                   }}
                 />
               </View>
@@ -163,16 +165,16 @@ function RoutePane({ plan }: { plan: ReturnType<typeof planTrip> }) {
 
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
         <Button
-          label="Оптимизировать"
+          label={tr('Оптимизировать')}
           icon="shuffle"
           tone="grey"
           style={{ flex: 1 }}
           onPress={() => {
             setTrip(optimizeOrder(trip, country));
-            toast('Порядок оптимизирован по расстоянию', 'shuffle');
+            toast(tr('Порядок оптимизирован по расстоянию'), 'shuffle');
           }}
         />
-        <Button label="Очистить" icon="trash" tone="outline" style={{ flex: 1 }} onPress={() => setTrip(trip.filter((id) => getPlace(id)?.c !== country))} />
+        <Button label={tr('Очистить')} icon="trash" tone="outline" style={{ flex: 1 }} onPress={() => setTrip(trip.filter((id) => getPlace(id)?.c !== country))} />
       </View>
     </View>
   );
@@ -185,8 +187,8 @@ function SavedPane({ places }: { places: Place[] }) {
     return (
       <View style={styles.empty}>
         <IconBubble name="heart" size={48} />
-        <Text style={styles.emptyB}>Здесь будут сохранённые места</Text>
-        <Text style={styles.emptyT}>Нажмите на сердечко в карточке — место появится здесь, даже без интернета.</Text>
+        <Text style={styles.emptyB}>{tr('Здесь будут сохранённые места')}</Text>
+        <Text style={styles.emptyT}>{tr('Нажмите на сердечко в карточке — место появится здесь, даже без интернета.')}</Text>
       </View>
     );
   }
@@ -202,11 +204,11 @@ function SavedPane({ places }: { places: Place[] }) {
               <Pressable
                 onPress={() => {
                   const added = toggleTrip(p.id);
-                  toast(added ? 'Добавили в маршрут' : 'Убрали из маршрута', 'route');
+                  toast(added ? tr('Добавили в маршрут') : tr('Убрали из маршрута'), 'route');
                 }}
                 style={[styles.addBtn, inTrip && { backgroundColor: color.black }]}
                 accessibilityRole="button">
-                <Text style={[styles.addT, inTrip && { color: color.lime }]}>{inTrip ? 'В маршруте' : '+ В маршрут'}</Text>
+                <Text style={[styles.addT, inTrip && { color: color.lime }]}>{inTrip ? tr('В маршруте') : tr('+ В маршрут')}</Text>
               </Pressable>
             }
           />

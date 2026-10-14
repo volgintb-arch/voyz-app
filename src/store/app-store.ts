@@ -15,6 +15,9 @@ const mmkvStorage: StateStorage = {
 
 interface AppState {
   country: CountryCode | null; // null — ещё не выбрана, показываем онбординг
+  /** Язык интерфейса; null — как на телефоне. */
+  lang: 'ru' | 'en' | null;
+  setLang: (l: 'ru' | 'en' | null) => void;
   saved: string[];
   /** Маршрут — упорядоченный список мест; дни считаются автоматически (см. src/geo/trip.ts). */
   trip: string[];
@@ -34,6 +37,8 @@ export const useApp = create<AppState>()(
   persist(
     (set, get) => ({
       country: null,
+      lang: null,
+      setLang: (lang) => set({ lang }),
       saved: [],
       trip: [],
       visited: {},
@@ -69,7 +74,7 @@ export const useApp = create<AppState>()(
       name: 'voyz-app',
       version: 3,
       storage: createJSONStorage(() => mmkvStorage),
-      partialize: ({ country, saved, trip, visited, reports }) => ({ country, saved, trip, visited, reports }),
+      partialize: ({ country, lang, saved, trip, visited, reports }) => ({ country, lang, saved, trip, visited, reports }),
       // v1 хранил маршрут по дням (string[][]) — разворачиваем в плоский список
       migrate: (state, version) => {
         const s = state as Partial<AppState> & { trip?: unknown };

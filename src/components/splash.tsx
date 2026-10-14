@@ -6,6 +6,7 @@ import Animated, { Easing, runOnJS, useAnimatedStyle, useReducedMotion, useShare
 import Svg, { Path } from 'react-native-svg';
 
 import { color, motion } from '@/theme/tokens';
+import { tr } from '@/i18n';
 
 // буквы логотипа: фрагмент viewBox (x, ширина) и путь — из reference/prototype_src/app.js → WM
 const LETTERS: [number, number, string][] = [
@@ -49,13 +50,13 @@ export function Splash({ onDone }: { onDone: () => void }) {
   if (gone) return null;
 
   return (
-    <Animated.View style={[StyleSheet.absoluteFill, styles.root, wrap]} pointerEvents="none" accessibilityLabel="VOYZ — загрузка">
+    <Animated.View style={[StyleSheet.absoluteFill, styles.root, wrap]} pointerEvents="none" accessibilityLabel={tr('VOYZ — загрузка')}>
       <View style={styles.logo}>
         {LETTERS.map(([x, w, d], i) => (
           <Letter key={i} i={i} x={x} w={w} d={d} reduce={reduce} />
         ))}
       </View>
-      <Text style={styles.tag}>Больше, чем просто поездки</Text>
+      <Text style={styles.tag}>{tr('Больше, чем просто поездки')}</Text>
       <View style={styles.track}>
         <Animated.View style={[styles.fill, barSt]} />
       </View>

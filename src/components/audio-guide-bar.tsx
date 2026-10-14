@@ -13,6 +13,7 @@ import { Icon } from '@/components/icon';
 import { audioSeconds, audioSource } from '@/data/places';
 import { mmss } from '@/lib/text';
 import { color } from '@/theme/tokens';
+import { tr } from '@/i18n';
 
 let modeSet = false;
 const ensureAudioMode = () => {
@@ -51,7 +52,7 @@ const Recorded = forwardRef<AudioGuideRef, { source: number; total?: number; tit
     if (status.playing) return player.pause();
     player.play();
     try {
-      player.setActiveForLockScreen(true, { title, artist: 'VOYZ-гид', albumTitle: 'Voyz' });
+      player.setActiveForLockScreen(true, { title, artist: tr('VOYZ-гид'), albumTitle: 'Voyz' });
     } catch {}
   };
   useImperativeHandle(ref, () => ({ play: () => !status.playing && toggle() }));
@@ -82,7 +83,7 @@ const Recorded = forwardRef<AudioGuideRef, { source: number; total?: number; tit
     Gesture.Tap().onEnd(() => runOnJS(toggle)()),
   );
 
-  const label = status.playing ? 'VOYZ-гид рассказывает' : started ? 'Пауза — нажмите, чтобы продолжить' : 'Послушать VOYZ-гид';
+  const label = status.playing ? tr('VOYZ-гид рассказывает') : started ? tr('Пауза — нажмите, чтобы продолжить') : tr('Послушать VOYZ-гид');
   const time = started ? mmss(Math.max(0, duration - status.currentTime)) : mmss(duration);
   return (
     <Bar
@@ -92,7 +93,7 @@ const Recorded = forwardRef<AudioGuideRef, { source: number; total?: number; tit
       label={label}
       time={time}
       onWidth={setWidth}
-      a11y={status.playing ? 'Пауза, VOYZ-гид' : 'Послушать VOYZ-гид'}
+      a11y={status.playing ? tr('Пауза, VOYZ-гид') : tr('Послушать VOYZ-гид')}
     />
   );
 });
@@ -112,7 +113,7 @@ const Spoken = forwardRef<AudioGuideRef, { text: string }>(function Spoken({ tex
   useImperativeHandle(ref, () => ({ play: () => !playing && toggle() }));
   useEffect(() => () => void Speech.stop(), []);
   const gesture = Gesture.Tap().onEnd(() => runOnJS(toggle)());
-  return <Bar gesture={gesture} playing={playing} progress={0} label={playing ? 'VOYZ-гид рассказывает' : 'Послушать VOYZ-гид'} time={mmss(est)} a11y="Послушать VOYZ-гид" />;
+  return <Bar gesture={gesture} playing={playing} progress={0} label={playing ? tr('VOYZ-гид рассказывает') : tr('Послушать VOYZ-гид')} time={mmss(est)} a11y="Послушать VOYZ-гид" />;
 });
 
 function Bar({ gesture, playing, progress, label, time, onWidth, a11y }: { gesture: ReturnType<typeof Gesture.Tap> | ReturnType<typeof Gesture.Exclusive>; playing: boolean; progress: number; label: string; time: string; onWidth?: (w: number) => void; a11y: string }) {

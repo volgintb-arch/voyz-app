@@ -13,6 +13,7 @@ import type { Place } from '@/data/types';
 import { cut } from '@/lib/text';
 import { APP_MAX_W, useAppSize } from '@/lib/layout';
 import { color } from '@/theme/tokens';
+import { tr } from '@/i18n';
 
 export function PhotoViewer({ place, index, onClose }: { place: Place; index: number | null; onClose: () => void }) {
   const { width, height } = useAppSize();
@@ -46,7 +47,7 @@ export function PhotoViewer({ place, index, onClose }: { place: Place; index: nu
             )}
           />
         ) : (
-          <Text style={[styles.cap, { marginTop: insets.top + 120 }]}>Фото нет — смотрите ссылки ниже</Text>
+          <Text style={[styles.cap, { marginTop: insets.top + 120 }]}>{tr('Фото нет — смотрите ссылки ниже')}</Text>
         )}
         {ph ? (
           <View style={styles.capBox}>
@@ -57,7 +58,7 @@ export function PhotoViewer({ place, index, onClose }: { place: Place; index: nu
             </Text>
             {ph.page ? (
               <Pressable onPress={() => Linking.openURL(ph.page)} accessibilityRole="link">
-                <Text style={[styles.cap, { textDecorationLine: 'underline', color: color.lime }]}>источник</Text>
+                <Text style={[styles.cap, { textDecorationLine: 'underline', color: color.lime }]}>{tr('источник')}</Text>
               </Pressable>
             ) : null}
             <Text style={styles.count}>
@@ -75,7 +76,7 @@ export function PhotoViewer({ place, index, onClose }: { place: Place; index: nu
             </Pressable>
           ))}
         </View>
-        <Pressable onPress={onClose} style={[styles.x, { top: insets.top + 10 }]} accessibilityRole="button" accessibilityLabel="Закрыть">
+        <Pressable onPress={onClose} style={[styles.x, { top: insets.top + 10 }]} accessibilityRole="button" accessibilityLabel={tr('Закрыть')}>
           <Glass dark clear style={styles.xb}>
             <Icon name="close" size={22} color={color.paper} />
           </Glass>

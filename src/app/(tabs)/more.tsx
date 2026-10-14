@@ -8,30 +8,33 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/icon';
 import { VoyzLogo } from '@/components/voyz-logo';
-import { meta, placesOf, plural } from '@/data/places';
+import { meta, placesOf } from '@/data/places';
 import { WEB_URL, canSaveOffline, saveForOffline, shareLink } from '@/lib/web-app';
 import type { CountryCode } from '@/data/types';
 import { toast, useApp } from '@/store/app-store';
 import { useFilters } from '@/store/filters';
 import { color, radius, spacing, type } from '@/theme/tokens';
+import { currentLang, pl, tr } from '@/i18n';
 
 export default function MoreTab() {
   const insets = useSafeAreaInsets();
   const country = useApp((s) => s.country) ?? 'kg';
   const setCountry = useApp((s) => s.setCountry);
   const reports = useApp((s) => s.reports.length);
+  const setLang = useApp((s) => s.setLang);
+  const lang = currentLang();
   const L = placesOf(country);
   const withPhoto = L.filter((p) => p.photos.length).length;
   const [offline, setOffline] = useState<{ done: number; total: number } | null>(null);
 
   const saveOffline = async () => {
-    if (!canSaveOffline()) return toast('Сохранение доступно на опубликованном сайте', 'download');
+    if (!canSaveOffline()) return toast(tr('Сохранение доступно на опубликованном сайте'), 'download');
     setOffline({ done: 0, total: 1 });
     try {
       await saveForOffline((done, total) => setOffline({ done, total }));
-      toast('Сохранили — Voyz работает без интернета', 'download');
+      toast(tr('Сохранили — Voyz работает без интернета'), 'download');
     } catch {
-      toast('Не получилось сохранить — проверьте интернет', 'download');
+      toast(tr('Не получилось сохранить — проверьте интернет'), 'download');
       setOffline(null);
     }
   };
@@ -40,74 +43,83 @@ export default function MoreTab() {
     if (c === country) return;
     useFilters.getState().clear();
     setCountry(c);
-    toast(meta.countries[c].name, 'globe');
+    toast(tr(meta.countries[c].name), 'globe');
   };
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: color.black }} contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 110 }}>
       <View style={{ paddingTop: insets.top + 18, paddingHorizontal: spacing.screenGutter, paddingBottom: 60 }}>
         <Text style={styles.title} accessibilityRole="header">
-          Ещё
+          {tr('Ещё')}
         </Text>
-        <Text style={styles.sub}>Настройки, офлайн и как мы проверяем места</Text>
+        <Text style={styles.sub}>{tr('Настройки, офлайн и как мы проверяем места')}</Text>
       </View>
       <View style={styles.sheet}>
         <View style={styles.list}>
           {(['kg', 'alt'] as CountryCode[]).map((c) => (
-            <Row key={c} icon="globe" label={meta.countries[c].name} onPress={() => pick(c)} right={c === country ? <Icon name="check" size={20} strokeWidth={2.2} /> : <Text style={styles.em}>{placesOf(c).length} мест</Text>} />
+            <Row key={c} icon="globe" label={tr(meta.countries[c].name)} onPress={() => pick(c)} right={c === country ? <Icon name="check" size={20} strokeWidth={2.2} /> : <Text style={styles.em}>{tr('{n} мест · {sub}', { n: placesOf(c).length, sub: '' }).replace(' · ', '')}</Text>} />
           ))}
-          <Row icon="download" label="Работает без интернета" right={<Text style={styles.em}>встроено</Text>} />
-          {reports ? <Row icon="flag" label="Отметки «Заметили изменения?»" right={<Text style={styles.em}>{reports} ждут отправки</Text>} /> : null}
+          <View style={styles.langRow}>
+            <Icon name="globe" size={20} />
+            <Text style={[styles.em, { flex: 1, color: color.black, fontSize: 16, fontFamily: 'Mulish_500Medium' }]}>{tr('Язык')}</Text>
+            {(['ru', 'en'] as const).map((l) => (
+              <Pressable key={l} onPress={() => setLang(l)} style={[styles.langBtn, lang === l && { backgroundColor: color.black }]} accessibilityRole="radio" accessibilityState={{ checked: lang === l }}>
+                <Text style={[styles.langT, lang === l && { color: color.lime }]}>{l === 'ru' ? 'Русский' : 'English'}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Row icon="download" label={tr('Работает без интернета')} right={<Text style={styles.em}>{tr('встроено')}</Text>} />
+          {reports ? <Row icon="flag" label={tr('Отметки «Заметили изменения?»')} right={<Text style={styles.em}>{tr('{n} ждут отправки', { n: reports })}</Text>} /> : null}
         </View>
 
         {Platform.OS === 'web' ? (
           <View style={[styles.method, { marginTop: 20, backgroundColor: color.lime }]}>
-            <Text style={styles.methodB}>Voyz на телефоне — без магазина</Text>
+            <Text style={styles.methodB}>{tr('Voyz на телефоне — без магазина')}</Text>
             <Text style={styles.methodT}>
-              iPhone: Safari → «Поделиться» → «На экран Домой». Android: Chrome → меню ⋮ → «Установить приложение». Иконка появится на главном экране, Voyz откроется на весь экран.
+              {tr('iPhone: Safari → «Поделиться» → «На экран Домой». Android: Chrome → меню ⋮ → «Установить приложение». Иконка появится на главном экране, Voyz откроется на весь экран.')}
             </Text>
             <Pressable onPress={saveOffline} disabled={!!offline && offline.done < offline.total} style={styles.offBtn} accessibilityRole="button">
               <Icon name="download" size={18} color={color.lime} />
               <Text style={styles.offT}>
-                {!offline ? 'Сохранить для офлайна · ~45 МБ' : offline.done < offline.total ? `Сохраняем… ${Math.round((offline.done / offline.total) * 100)}%` : 'Сохранено — работает без интернета ✓'}
+                {!offline ? tr('Сохранить для офлайна · ~45 МБ') : offline.done < offline.total ? tr('Сохраняем… {p}%', { p: Math.round((offline.done / offline.total) * 100) }) : tr('Сохранено — работает без интернета ✓')}
               </Text>
             </Pressable>
-            <Pressable onPress={async () => (await shareLink('Voyz', 'Voyz — путеводитель по Кыргызстану и Алтаю', WEB_URL + '/')) === 'copied' && toast('Ссылка скопирована', 'link')} style={[styles.offBtn, { backgroundColor: color.paper, marginTop: 8 }]} accessibilityRole="button">
+            <Pressable onPress={async () => (await shareLink('Voyz', 'Voyz — путеводитель по Кыргызстану и Алтаю', WEB_URL + '/')) === 'copied' && toast(tr('Ссылка скопирована'), 'link')} style={[styles.offBtn, { backgroundColor: color.paper, marginTop: 8 }]} accessibilityRole="button">
               <Icon name="share" size={18} />
-              <Text style={[styles.offT, { color: color.black }]}>Поделиться ссылкой на Voyz</Text>
+              <Text style={[styles.offT, { color: color.black }]}>{tr('Поделиться ссылкой на Voyz')}</Text>
             </Pressable>
           </View>
         ) : null}
 
         <View style={[styles.method, { marginTop: 20 }]}>
-          <Text style={styles.methodB}>Как мы проверяем места</Text>
+          <Text style={styles.methodB}>{tr('Как мы проверяем места')}</Text>
           <Text style={styles.methodT}>
-            Каждая карточка — 34 поля: от координат и сезона до парковки, связи и стоимости входа. Мы сверяем данные минимум по двум открытым источникам, отмечаем дату проверки и спорные места. Индекс полноты (0–100) складывается из насыщенности, числа подтверждённых полей и практической части: дорога, ночлег, транспорт. В разделе «{meta.countries[country].name}» — {L.length} {plural(L.length, 'место', 'места', 'мест')}, у {withPhoto} есть фото.
+            {tr('Каждая карточка — 34 поля: от координат и сезона до парковки, связи и стоимости входа. Мы сверяем данные минимум по двум открытым источникам, отмечаем дату проверки и спорные места. Индекс полноты (0–100) складывается из насыщенности, числа подтверждённых полей и практической части: дорога, ночлег, транспорт. В разделе «{country}» — {n} {places}, у {photos} есть фото.', { country: tr(meta.countries[country].name), n: L.length, places: pl(L.length, 'место', 'места', 'мест'), photos: withPhoto })}
           </Text>
         </View>
         <View style={[styles.method, { marginTop: 12, backgroundColor: color.black }]}>
-          <Text style={[styles.methodB, { color: color.lime }]}>Карта без сети</Text>
+          <Text style={[styles.methodB, { color: color.lime }]}>{tr('Карта без сети')}</Text>
           <Text style={[styles.methodT, { color: color.paper }]}>
-            Встроенная схема (Natural Earth): основные трассы, реки, озёра и границы. Рельеф гор и маршруты по дорогам тоже работают без интернета. Подробная карта, 3D и маршрут «от меня» — когда есть сеть. Для грунтовок откройте точку в навигаторе — кнопки есть в каждой карточке.
+            {tr('Встроенная схема (Natural Earth): основные трассы, реки, озёра и границы. Рельеф гор и маршруты по дорогам тоже работают без интернета. Подробная карта, 3D и маршрут «от меня» — когда есть сеть. Для грунтовок откройте точку в навигаторе — кнопки есть в каждой карточке.')}
           </Text>
         </View>
 
         <View style={[styles.list, { marginTop: 12 }]}>
           <Row
             icon="sparkle"
-            label="Показать приветствие снова"
+            label={tr('Показать приветствие снова')}
             onPress={() => {
               setCountry(null);
               router.replace('/onboarding');
             }}
           />
-          <Row icon="plus" label="Предложить новое место" onPress={() => Linking.openURL('mailto:?subject=' + encodeURIComponent('Voyz — предложить место'))} />
+          <Row icon="plus" label={tr('Предложить новое место')} onPress={() => Linking.openURL('mailto:?subject=' + encodeURIComponent('Voyz — предложить место'))} />
         </View>
 
         <View style={{ alignItems: 'center', paddingTop: 46 }}>
           <VoyzLogo width={260} fill="#151515" />
-          <Text style={styles.foot}>Больше, чем просто поездки</Text>
-          <Text style={[styles.em, { marginTop: 6 }]}>Данные проверены {meta.built.split('-').reverse().join('.')}</Text>
+          <Text style={styles.foot}>{tr('Больше, чем просто поездки')}</Text>
+          <Text style={[styles.em, { marginTop: 6 }]}>{tr('Данные проверены {date}', { date: meta.built.split('-').reverse().join('.') })}</Text>
         </View>
       </View>
     </ScrollView>
@@ -135,6 +147,9 @@ const styles = StyleSheet.create({
   method: { backgroundColor: color.mist, borderRadius: 24, padding: 18 },
   methodB: { fontFamily: 'Mulish_700Bold', fontSize: 16, color: color.black, marginBottom: 6 },
   methodT: { fontFamily: 'Mulish_400Regular', fontSize: 14.5, lineHeight: 21, color: '#262624' },
+  langRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: color.line },
+  langBtn: { minHeight: 34, paddingHorizontal: 12, borderRadius: 999, backgroundColor: color.mist, justifyContent: 'center' },
+  langT: { fontFamily: 'Mulish_600SemiBold', fontSize: 13, color: color.black },
   offBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 46, borderRadius: 999, backgroundColor: color.black, marginTop: 14, paddingHorizontal: 16 },
   offT: { fontFamily: 'Mulish_700Bold', fontSize: 14.5, color: color.lime },
   foot: { fontFamily: 'Mulish_400Regular', fontSize: 15, color: '#222', marginTop: 12 },

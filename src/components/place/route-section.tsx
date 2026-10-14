@@ -22,6 +22,7 @@ import { NAVIGATORS, openNavigator } from '@/lib/navigators';
 import { cut, findTel, findUrl, haversine, lead, shortUrl, telHref } from '@/lib/text';
 import { toast, useApp } from '@/store/app-store';
 import { color, motion, spacing, type } from '@/theme/tokens';
+import { dataLabel, tr } from '@/i18n';
 
 const dest = (p: Place, a?: Approach): LatLng | null => (a?.rt && (a.rt.pc || a.rt.tc)) || p.ll;
 
@@ -32,7 +33,7 @@ export function RouteSection({ place, onReadHow }: { place: Place; onReadHow: ()
 
   return (
     <View style={styles.sec}>
-      <SectionHeader title="Как добраться" />
+      <SectionHeader title={tr('Как добраться')} />
       {place.p.sum ? <RichText style={styles.lead2}>{lead(place.p.sum, 2)}</RichText> : null}
       {apps.length > 1 ? (
         <FlatList
@@ -51,7 +52,7 @@ export function RouteSection({ place, onReadHow }: { place: Place; onReadHow: ()
               style={[styles.app, index === ai && styles.appOn]}
               accessibilityRole="tab"
               accessibilityState={{ selected: index === ai }}>
-              {item.rec ? <Text style={styles.rec}>Рекомендуем</Text> : null}
+              {item.rec ? <Text style={styles.rec}>{tr('Рекомендуем')}</Text> : null}
               <Text style={[styles.appT, index === ai && { color: color.lime }]} numberOfLines={2}>
                 {item.title}
               </Text>
@@ -72,7 +73,7 @@ export function RouteSection({ place, onReadHow }: { place: Place; onReadHow: ()
       ) : (
         <RichText style={styles.lead2}>{lead(place.how, 3)}</RichText>
       )}
-      <ReadMore label="Как добраться — подробно" onPress={onReadHow} />
+      <ReadMore label={tr('Как добраться — подробно')} onPress={onReadHow} />
       <Transport place={place} />
     </View>
   );
@@ -122,19 +123,19 @@ function RouteMap({ place, a, ai }: { place: Place; a?: Approach; ai: number }) 
     <View style={styles.routemap}>
       <VoyzMap key={ai} country={place.c} lines={lines} points={points} fit={fit} padding={{ top: 30, left: 30, right: 80, bottom: 60 }} maxZoom={12} style={StyleSheet.absoluteFill} />
       <View style={styles.legend} pointerEvents="none">
-        <Legend kind="road" label="по трассе" />
-        <Legend kind="dash" label="подъезд" />
-        <Legend kind="trail" label="тропа" />
+        <Legend kind="road" label={tr('по трассе')} />
+        <Legend kind="dash" label={tr('подъезд')} />
+        <Legend kind="trail" label={tr('тропа')} />
       </View>
       <Pressable
         onPress={() => {
           const added = toggleTrip(place.id);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          toast(added ? 'Добавили в маршрут' : 'Убрали из маршрута', 'route');
+          toast(added ? tr('Добавили в маршрут') : tr('Убрали из маршрута'), 'route');
         }}
         style={styles.fabWrap}
         accessibilityRole="button"
-        accessibilityLabel={inTrip ? 'Убрать из маршрута' : 'Добавить в маршрут'}>
+        accessibilityLabel={inTrip ? tr('Убрать из маршрута') : tr('Добавить в маршрут')}>
         <Glass interactive tint="rgba(216,252,0,.85)" style={styles.fab}>
           <Animated.View style={rot}>
             <Icon name="plus" size={24} strokeWidth={2.2} />
@@ -181,16 +182,16 @@ function ApproachBody({ place, a }: { place: Place; a: Approach }) {
   if (a.time) stats.push(['timer', cut(a.time, 34)]);
   // «км» проверяем по полной строке: после обрезки его может не остаться
   // «км» дописываем только к голому числу («≈270»), а не к фразе вида «≈270 от Бишкека»
-  if (a.km) stats.push(['route', /^[≈~\d\s.,–-]+$/.test(a.km) ? `${a.km.trim()} км` : cut(a.km, 34)]);
-  if (a.vehicle) stats.push([accIcon(a.vehicle === 'седан' ? 'car' : a.vehicle), a.vehicle]);
+  if (a.km) stats.push(['route', /^[≈~\d\s.,–-]+$/.test(a.km) ? tr('{km} км', { km: a.km.trim() }) : cut(a.km, 34)]);
+  if (a.vehicle) stats.push([accIcon(a.vehicle === 'седан' ? 'car' : a.vehicle), dataLabel(tr(a.vehicle))]);
 
   const steps: { k: 's' | 'p' | 'f' | ''; n: string; b: string; t: string }[] = [];
-  steps.push({ k: 's', n: '1', b: `Старт: ${a.rt ? a.rt.hub : a.from || 'город'}`, t: a.from && a.rt && a.from !== a.rt.hub ? a.from : '' });
-  steps.push({ k: '', n: '2', b: 'Дорога', t: [a.route, a.surface].filter(Boolean).join('. ') });
-  if (a.last) steps.push({ k: '', n: '3', b: 'Последние заправки и магазины', t: a.last });
-  if (a.parking && (a.parking.d || a.parking.price)) steps.push({ k: 'p', n: 'P', b: 'Парковка', t: [a.parking.d, a.parking.price && `Цена: ${a.parking.price}`].filter(Boolean).join('. ') });
-  if (a.trail?.d) steps.push({ k: '', n: '↟', b: 'Начало тропы', t: a.trail.d });
-  steps.push({ k: 'f', n: '★', b: place.name, t: a.season ? `Сезон для этого пути: ${a.season}` : '' });
+  steps.push({ k: 's', n: '1', b: tr('Старт: {hub}', { hub: a.rt ? a.rt.hub : a.from || tr('город') }), t: a.from && a.rt && a.from !== a.rt.hub ? a.from : '' });
+  steps.push({ k: '', n: '2', b: tr('Дорога'), t: [a.route, a.surface].filter(Boolean).join('. ') });
+  if (a.last) steps.push({ k: '', n: '3', b: tr('Последние заправки и магазины'), t: a.last });
+  if (a.parking && (a.parking.d || a.parking.price)) steps.push({ k: 'p', n: 'P', b: tr('Парковка'), t: [a.parking.d, a.parking.price && tr('Цена: {p}', { p: a.parking.price })].filter(Boolean).join('. ') });
+  if (a.trail?.d) steps.push({ k: '', n: '↟', b: tr('Начало тропы'), t: a.trail.d });
+  steps.push({ k: 'f', n: '★', b: place.name, t: a.season ? tr('Сезон для этого пути: {s}', { s: a.season }) : '' });
   const d = dest(place, a);
 
   return (
@@ -214,32 +215,32 @@ function ApproachBody({ place, a }: { place: Place; a: Approach }) {
       ) : null}
       {d ? (
         <>
-          <Text style={styles.navH}>Открыть в навигаторе</Text>
+          <Text style={styles.navH}>{tr('Открыть в навигаторе')}</Text>
           <View style={styles.navs}>
             {NAVIGATORS.map((n) => (
               <Pressable
                 key={n.id}
                 onPress={async () => {
-                  if (!(await openNavigator(n.id, d, place.name))) toast('Не удалось открыть навигатор', 'map');
+                  if (!(await openNavigator(n.id, d, place.name))) toast(tr('Не удалось открыть навигатор'), 'map');
                 }}
                 style={({ pressed }) => [styles.nav, pressed && { backgroundColor: color.mist }]}
                 accessibilityRole="link"
-                accessibilityLabel={`Маршрут в ${n.name}`}>
+                accessibilityLabel={tr('Маршрут в {app}', { app: tr(n.name) })}>
                 <View style={[styles.navBadge, { backgroundColor: n.bg }]}>
                   <Text style={[styles.navBadgeT, { color: n.fg }]}>{n.badge}</Text>
                 </View>
                 <Text style={styles.navT} numberOfLines={1}>
-                  {n.name}
+                  {tr(n.name)}
                 </Text>
               </Pressable>
             ))}
           </View>
           <Text style={styles.small}>
-            {a.rt && (a.rt.pc || a.rt.tc) ? 'Точка — парковка или начало тропы' : 'Точка — координаты места'}: {d[0].toFixed(5)}, {d[1].toFixed(5)}
+            {a.rt && (a.rt.pc || a.rt.tc) ? tr('Точка — парковка или начало тропы') : tr('Точка — координаты места')}: {d[0].toFixed(5)}, {d[1].toFixed(5)}
           </Text>
         </>
       ) : null}
-      {a.src ? <RichText style={styles.small}>{`Источник: ${a.src}`}</RichText> : null}
+      {a.src ? <RichText style={styles.small}>{tr('Источник: {s}', { s: a.src })}</RichText> : null}
     </View>
   );
 }
@@ -261,7 +262,7 @@ function Step({ k, n, b, t, last }: { k: string; n: string; b: string; t: string
           {t}
         </RichText>
       ) : null}
-      {long ? <Text style={styles.more2}>{open ? 'свернуть' : 'ещё'}</Text> : null}
+      {long ? <Text style={styles.more2}>{open ? tr('свернуть') : tr('ещё')}</Text> : null}
     </Pressable>
   );
 }
@@ -272,7 +273,7 @@ function Transport({ place }: { place: Place }) {
   return (
     <View style={{ marginTop: 28 }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: 12 }}>
-        <Text style={{ fontFamily: 'Mulish_600SemiBold', fontSize: 18, color: color.black }}>Транспорт и перевозчики</Text>
+        <Text style={{ fontFamily: 'Mulish_600SemiBold', fontSize: 18, color: color.black }}>{tr('Транспорт и перевозчики')}</Text>
         <Text style={[styles.small, { marginLeft: 'auto', marginTop: 0 }]}>{T.length}</Text>
       </View>
       <FlatList
@@ -303,12 +304,12 @@ function Transport({ place }: { place: Place }) {
                   {cut(t.price, 70) || cut(t.details, 70)}
                 </Text>
                 {tel ? (
-                  <Pressable onPress={() => Linking.openURL(telHref(tel))} style={[styles.act, { backgroundColor: color.lime }]} accessibilityRole="link" accessibilityLabel={`Позвонить ${tel}`}>
-                    <Text style={styles.actT}>Связаться</Text>
+                  <Pressable onPress={() => Linking.openURL(telHref(tel))} style={[styles.act, { backgroundColor: color.lime }]} accessibilityRole="link" accessibilityLabel={tr('Позвонить {tel}', { tel })}>
+                    <Text style={styles.actT}>{tr('Связаться')}</Text>
                   </Pressable>
                 ) : url ? (
                   <Pressable onPress={() => Linking.openURL(url)} style={[styles.act, { backgroundColor: color.mist }]} accessibilityRole="link" accessibilityLabel={shortUrl(url)}>
-                    <Text style={styles.actT}>{/^https?:/.test(ct) ? 'Сайт' : 'Источник'}</Text>
+                    <Text style={styles.actT}>{/^https?:/.test(ct) ? tr('Сайт') : tr('Источник')}</Text>
                   </Pressable>
                 ) : null}
               </View>

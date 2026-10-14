@@ -12,13 +12,14 @@ import type { Place } from '@/data/types';
 import { accIcon } from '@/lib/icon-rules';
 import { cut, firstClause, lead, sentences } from '@/lib/text';
 import { color, spacing, type } from '@/theme/tokens';
+import { dataLabel, durationLabel, tr, whenLabel } from '@/i18n';
 
 export function InfoGrid({ place }: { place: Place }) {
-  const onsite: [IconName, string, string] = place.s.onsite ? ['timer', 'Время на месте', place.s.onsite] : ['wallet', 'Вход', place.s.entry || '—'];
+  const onsite: [IconName, string, string] = place.s.onsite ? ['timer', 'Время на месте', durationLabel(place.s.onsite)] : ['wallet', 'Вход', place.s.entry || '—'];
   const items: [IconName, string, string][] = [
-    ['checks', 'Сложность', place.s.diff],
-    ['cal', 'Когда', place.s.when],
-    [accIcon(place.s.acc), 'Доступ', place.s.acc],
+    ['checks', 'Сложность', dataLabel(place.s.diff)],
+    ['cal', 'Когда', whenLabel(place.s.when)],
+    [accIcon(place.s.acc), 'Доступ', dataLabel(place.s.acc)],
     onsite,
   ];
   return (
@@ -29,9 +30,9 @@ export function InfoGrid({ place }: { place: Place }) {
           <View key={k} style={styles.it}>
             <IconBubble name={ic} />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={styles.itK}>{k}</Text>
+              <Text style={styles.itK}>{tr(k)}</Text>
               <Text style={styles.itV} numberOfLines={2}>
-                {v || 'пока не подтверждено'}
+                {v || tr('пока не подтверждено')}
               </Text>
             </View>
           </View>
@@ -45,11 +46,11 @@ export function WhySection({ place, onRead }: { place: Place; onRead: () => void
   const text = place.guide || place.short;
   return (
     <View style={styles.dark}>
-      <SectionHeader title="Почему стоит приехать" light />
+      <SectionHeader title={tr('Почему стоит приехать')} light />
       <RichText style={styles.lead} numStyle={{ color: color.lime }}>
         {lead(text, 3)}
       </RichText>
-      {sentences(place.guide).length > 3 ? <ReadMore label="Читать полностью" onPress={onRead} light /> : null}
+      {sentences(place.guide).length > 3 ? <ReadMore label={tr('Читать полностью')} onPress={onRead} light /> : null}
     </View>
   );
 }
@@ -73,7 +74,7 @@ export function KeyFacts({ place }: { place: Place }) {
             <Icon name={ic} size={17} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.kfK}>{k}</Text>
+            <Text style={styles.kfK}>{tr(k)}</Text>
             <RichText style={styles.kfV}>{v}</RichText>
           </View>
         </View>
@@ -105,7 +106,7 @@ export function MediaBlock({ place, onView }: { place: Place; onView: (i: number
   vids.slice(0, Math.max(0, 3 - tiles.length)).forEach((v) => {
     const id = ytId(v.u);
     tiles.push(
-      <Pressable key={v.u} onPress={() => Linking.openURL(v.u)} style={[styles.tile, tiles.length === 0 && styles.tileBig, { backgroundColor: '#111' }]} accessibilityRole="link" accessibilityLabel={`Видео: ${v.t}`}>
+      <Pressable key={v.u} onPress={() => Linking.openURL(v.u)} style={[styles.tile, tiles.length === 0 && styles.tileBig, { backgroundColor: '#111' }]} accessibilityRole="link" accessibilityLabel={tr('Видео: {t}', { t: v.t })}>
         {id ? <Image source={{ uri: `https://i.ytimg.com/vi/${id}/hqdefault.jpg` }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
         <View style={styles.playBtn}>
           <Icon name="play" size={16} fill={color.black} strokeWidth={0} />
@@ -118,7 +119,7 @@ export function MediaBlock({ place, onView }: { place: Place; onView: (i: number
   });
   return (
     <View style={styles.sec}>
-      <SectionHeader title="Медиа" more={ph.length ? 'Смотреть все' : undefined} onMore={() => onView(0)} />
+      <SectionHeader title={tr('Медиа')} more={ph.length ? tr('Смотреть все') : undefined} onMore={() => onView(0)} />
       <View style={styles.media}>{tiles}</View>
       {vids.length ? (
         <View style={{ gap: 8, marginTop: 12 }}>

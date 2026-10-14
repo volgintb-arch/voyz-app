@@ -5,9 +5,13 @@ import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { LatLng } from '@/data/types';
+import { currentLang, tr } from '@/i18n';
 import { haversine } from '@/lib/text';
 
 import { distToLineM, fetchRoute, fmtDist, nextManeuver, type Maneuver, type OnlineRoute } from './online';
+
+/** Голос подсказок — на языке интерфейса. */
+const voiceLang = () => (currentLang() === 'en' ? 'en-US' : 'ru-RU');
 
 export type NavState =
   | { phase: 'idle' }
@@ -42,7 +46,7 @@ export function useNavigation(dest: LatLng | null) {
 
   const myPos = async (): Promise<LatLng> => {
     const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') throw new Error('Нет доступа к геопозиции');
+    if (status !== 'granted') throw new Error('no-permission');
     const p = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
     return [p.coords.latitude, p.coords.longitude];
   };
@@ -59,7 +63,7 @@ export function useNavigation(dest: LatLng | null) {
       spoken.current.clear();
       setState({ phase: 'preview', route: r, pos: from, next: r.steps[1], leftKm: r.km });
     } catch (e) {
-      const msg = e instanceof Error && /геопоз/.test(e.message) ? e.message : 'Маршрут онлайн не построился — проверьте интернет';
+      const msg = e instanceof Error && e.message === 'no-permission' ? tr('Нет доступа к геопозиции') : tr('Маршрут онлайн не построился — проверьте интернет');
       setState({ phase: 'error', msg });
     }
   }, [dest]);
@@ -76,7 +80,7 @@ export function useNavigation(dest: LatLng | null) {
           route.current = nr;
           passed.current = 0;
           spoken.current.clear();
-          if (voiceRef.current) Speech.speak('Маршрут перестроен', { language: 'ru-RU' });
+          if (voiceRef.current) Speech.speak(tr('Маршрут перестроен'), { language: voiceLang() });
         } catch {
           // нет сети — продолжаем по старой линии
         }
@@ -90,7 +94,10 @@ export function useNavigation(dest: LatLng | null) {
           const key = `${nm.i}@${at}`;
           if (nm.d <= at && !spoken.current.has(key)) {
             spoken.current.add(key);
-            Speech.speak(nm.step.icon === 'arrive' ? 'Вы прибываете на место' : `Через ${fmtDist(nm.d)} ${nm.step.text.toLowerCase()}`, { language: 'ru-RU' });
+            Speech.speak(
+              nm.step.icon === 'arrive' ? tr('Вы прибываете на место') : tr('Через {d} {step}', { d: fmtDist(nm.d), step: nm.step.text.toLowerCase() }),
+              { language: voiceLang() },
+            );
           }
         }
       }
@@ -107,7 +114,7 @@ export function useNavigation(dest: LatLng | null) {
     watch.current = await Location.watchPositionAsync({ accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 10, timeInterval: 1500 }, (l) =>
       onPos([l.coords.latitude, l.coords.longitude], l.coords.heading ?? undefined),
     );
-    if (voiceRef.current) Speech.speak('Поехали', { language: 'ru-RU' });
+    if (voiceRef.current) Speech.speak(tr('Поехали'), { language: voiceLang() });
   }, [preview, onPos]);
 
   return { state, preview, start, stop, voice, setVoice };

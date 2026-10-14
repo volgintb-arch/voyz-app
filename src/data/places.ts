@@ -3,6 +3,8 @@
 import type { ImageSourcePropType } from 'react-native';
 
 import raw from '../../assets/data/places.json';
+import { currentLang, dataLabel, tr } from '@/i18n';
+
 import { audioDuration, audioSources, photoSources } from './media.generated';
 import type { CountryCode, Place, PlacesFile } from './types';
 
@@ -51,6 +53,10 @@ export const isTop = (p: Place) => !!(p.rank && p.top);
 
 /** Подпись местоположения, как в прототипе: «Чуйская обл.» / «Алтай». */
 export const locLine = (p: Place) => (p.c === 'kg' ? (p.reg || '').replace(' область', ' обл.') : p.reg || 'Алтай');
+
+/** Подпись региона и категории на языке интерфейса (данные хранятся по-русски). */
+export const locLabel = (p: Place) => dataLabel(locLine(p));
+export const catLabel = (cat: string) => (currentLang() === 'en' ? tr(catShort(cat)) : cat);
 
 export interface Filters {
   q?: string;

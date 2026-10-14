@@ -4,6 +4,7 @@
 //  - OSRM demo (router.project-osrm.org) запрещает нагрузку от приложений → свой OSRM/Valhalla или GraphHopper/Mapbox с ключом.
 //  - OpenFreeMap и Terrain Tiles (AWS Open Data) бесплатны и без ключа, но для большой аудитории лучше свой CDN/PMTiles.
 import type { LatLng } from '@/data/types';
+import { currentLang } from '@/i18n';
 import { haversine } from '@/lib/text';
 
 export const ONLINE = {
@@ -78,6 +79,32 @@ function maneuverText(s: OsrmStep): Pick<Maneuver, 'text' | 'icon'> {
       return { text: side === 'прямо' ? `Езжайте прямо${on}` : `Поверните ${side}${on}`, icon };
   }
 }
+/** Текст манёвра на английском (интерфейс в режиме EN). */
+function maneuverTextEn(s: OsrmStep): Pick<Maneuver, 'text' | 'icon'> {
+  const road = [s.ref, s.name].filter(Boolean).join(' · ');
+  const on = road ? ` onto ${road}` : '';
+  const m = s.maneuver;
+  const side = m.modifier ?? '';
+  const icon: Maneuver['icon'] = side.includes('left') ? 'left' : side.includes('right') ? 'right' : side === 'uturn' ? 'uturn' : 'straight';
+  switch (m.type) {
+    case 'depart':
+      return { text: `Head out${on}`, icon: 'depart' };
+    case 'arrive':
+      return { text: 'You have arrived', icon: 'arrive' };
+    case 'roundabout':
+    case 'rotary':
+      return { text: `At the roundabout take exit ${m.exit ?? ''}${on}`, icon: 'round' };
+    case 'continue':
+    case 'new name':
+      return { text: `Continue ${side || 'straight'}${on}`, icon };
+    case 'fork':
+      return { text: `Keep ${side.replace('slight ', '')} at the fork${on}`, icon };
+    case 'merge':
+      return { text: `Merge ${side}${on}`, icon };
+    default:
+      return { text: side === 'straight' ? `Go straight${on}` : side === 'uturn' ? 'Make a U-turn' : `Turn ${side}${on}`, icon };
+  }
+}
 
 /** Маршрут по дорогам между двумя точками. Без сети — бросает ошибку (вызывающий показывает тост). */
 export async function fetchRoute(from: LatLng, to: LatLng, signal?: AbortSignal): Promise<OnlineRoute> {
@@ -90,7 +117,7 @@ export async function fetchRoute(from: LatLng, to: LatLng, signal?: AbortSignal)
   const steps: Maneuver[] = (r.legs?.[0]?.steps ?? []).map((s: OsrmStep) => ({
     ll: [s.maneuver.location[1], s.maneuver.location[0]] as LatLng,
     distM: s.distance,
-    ...maneuverText(s),
+    ...(currentLang() === 'en' ? maneuverTextEn(s) : maneuverText(s)),
   }));
   return { line: r.geometry.coordinates.map(([lo, la]: [number, number]) => [la, lo] as LatLng), km: r.distance / 1000, min: r.duration / 60, steps };
 }
@@ -122,4 +149,11 @@ export function nextManeuver(pos: LatLng, steps: Maneuver[], passed: number) {
   return null;
 }
 
-export const fmtDist = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(m >= 10000 ? 0 : 1).replace('.', ',')} км` : `${Math.max(10, Math.round(m / 10) * 10)} м`);
+export const fmtDist = (m: number) => {
+  const en = currentLang() === 'en';
+  if (m >= 1000) {
+    const v = (m / 1000).toFixed(m >= 10000 ? 0 : 1);
+    return en ? `${v} km` : `${v.replace('.', ',')} км`;
+  }
+  return `${Math.max(10, Math.round(m / 10) * 10)} ${en ? 'm' : 'м'}`;
+};

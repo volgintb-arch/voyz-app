@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { APP_MAX_W } from '@/lib/layout';
 import { color, motion, type } from '@/theme/tokens';
+import { tr } from '@/i18n';
 
 interface Props {
   visible: boolean;
@@ -58,7 +59,7 @@ export function Sheet({ visible, onClose, title, tall, children, footer }: Props
     <Modal transparent visible statusBarTranslucent animationType="none" onRequestClose={onClose}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, scrimStyle]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Закрыть" />
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={tr('Закрыть')} />
         </Animated.View>
         <Animated.View
           style={[styles.sheet, { maxHeight: height * (tall ? 0.92 : 0.86), paddingBottom: insets.bottom + 18 }, tall && { height: height * 0.92 }, sheetStyle]}

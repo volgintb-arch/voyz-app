@@ -12,10 +12,11 @@ import { Icon } from '@/components/icon';
 import { FinishMark } from '@/components/map/markers';
 import { VoyzMap } from '@/components/map/voyz-map';
 import { PhotoShade } from '@/components/photo-shade';
-import { locLine, photoSource } from '@/data/places';
+import { locLabel, photoSource } from '@/data/places';
 import type { Place } from '@/data/types';
 import { useAppSize } from '@/lib/layout';
 import { color, type } from '@/theme/tokens';
+import { tr } from '@/i18n';
 
 export const HERO_H = 540;
 
@@ -68,7 +69,7 @@ export function Hero({ place, scrollY, onPhoto, onMapThumb }: { place: Place; sc
             ) : (
               <View style={styles.pill}>
                 <Icon name="shield" size={14} />
-                <Text style={styles.pillT}>Проверено</Text>
+                <Text style={styles.pillT}>{tr('Проверено')}</Text>
               </View>
             )}
             {photos.length > 1 ? (
@@ -84,11 +85,11 @@ export function Hero({ place, scrollY, onPhoto, onMapThumb }: { place: Place; sc
           </Text>
           <View style={styles.loc}>
             <Icon name="pin" size={15} color={color.mutedOnDark} />
-            <Text style={styles.locT}>{place.c === 'kg' ? locLine(place) : place.dist || 'Республика Алтай'}</Text>
+            <Text style={styles.locT}>{place.c === 'kg' ? locLabel(place) : place.dist || tr('Республика Алтай')}</Text>
           </View>
         </View>
         {place.ll ? (
-          <Pressable onPress={onMapThumb} style={styles.thumb} accessibilityRole="button" accessibilityLabel="Как добраться">
+          <Pressable onPress={onMapThumb} style={styles.thumb} accessibilityRole="button" accessibilityLabel={tr('Как добраться')}>
             <MiniMap place={place} />
           </Pressable>
         ) : null}

@@ -17,6 +17,7 @@ import { Splash } from '@/components/splash';
 import { ToastHost } from '@/components/toast-host';
 import { APP_MAX_W } from '@/lib/layout';
 import { registerServiceWorker } from '@/lib/web-app';
+import { useApp } from '@/store/app-store';
 import { color } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -32,6 +33,7 @@ export default function RootLayout() {
   }, []);
   const ready = loaded || !!error || timedOut;
   const [splash, setSplash] = useState(true);
+  const lang = useApp((s) => s.lang);
   // веб: сервис-воркер — приложение открывается без сети и ставится на главный экран
   useEffect(registerServiceWorker, []);
 
@@ -45,7 +47,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.outer}>
       <View style={styles.column}>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.black } }}>
+      <Stack key={lang ?? 'auto'} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.black } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
         {/* push: слайд справа, свайп от левого края назад (iOS), системная «назад» на Android */}

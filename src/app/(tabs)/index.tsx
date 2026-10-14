@@ -11,7 +11,7 @@ import { Icon } from '@/components/icon';
 import { BigPlaceCard, MiniPlaceCard, RowPlaceCard } from '@/components/place-cards';
 import { Chip, SectionHeader } from '@/components/ui';
 import { VoyzLogo } from '@/components/voyz-logo';
-import { MONTHS_IN, catShort, filterPlaces, noCar, placesOf, plural, type Filters } from '@/data/places';
+import { catShort, filterPlaces, noCar, placesOf, type Filters } from '@/data/places';
 import type { Place } from '@/data/types';
 import { HUB } from '@/geo/geo-data';
 import { catIcon } from '@/lib/icon-rules';
@@ -19,6 +19,7 @@ import { haversine } from '@/lib/text';
 import { useApp } from '@/store/app-store';
 import { hasFilters, useFilters } from '@/store/filters';
 import { color, radius, spacing, type } from '@/theme/tokens';
+import { dataLabel, monthIn, pl, tr } from '@/i18n';
 
 const byIdx = (a: Place, b: Place) => (b.idx || 0) - (a.idx || 0);
 
@@ -71,7 +72,7 @@ export default function Home() {
   };
 
   const tagLabel = (k: string, v: unknown) =>
-    k === 'q' ? `«${v}»` : k === 'month' ? `Сезон: ${MONTHS_IN[(v as number) - 1]}` : k === 'nocar' ? 'Без машины' : k === 'photo' ? 'С фото' : k === 'season' ? 'Сезон сейчас' : k === 'best' ? 'По полноте' : k === 'diff' ? `Сложность: ${v}…` : String(v);
+    k === 'q' ? `«${v}»` : k === 'month' ? tr('Сезон: {month}', { month: monthIn((v as number) - 1) }) : k === 'nocar' ? tr('Без машины') : k === 'photo' ? tr('С фото') : k === 'season' ? tr('Сезон сейчас') : k === 'best' ? tr('По полноте') : k === 'diff' ? tr('Сложность: {v}…', { v: String(v) }) : k === 'cat' || k === 'acc' ? dataLabel(tr(String(v))) : String(v);
 
   const header = (
     <>
@@ -81,29 +82,29 @@ export default function Home() {
           <CountrySegment />
         </View>
         <Text style={styles.title} accessibilityRole="header">
-          Куда поедем{'\n'}в {MONTHS_IN[m]}?
+          {tr('Куда поедем\nв {month}?', { month: monthIn(m) })}
         </Text>
         <Text style={styles.sub}>
-          {rails.all.length} {plural(rails.all.length, 'место', 'места', 'мест')} · маршруты, ночлег, парковки
+          {tr('{n} {places} · маршруты, ночлег, парковки', { n: rails.all.length, places: pl(rails.all.length, 'место', 'места', 'мест') })}
         </Text>
         <View style={styles.search}>
           <Icon name="search" size={20} color={color.paper} />
           <TextInput
             value={q}
             onChangeText={setQ}
-            placeholder="Озеро, перевал, село…"
+            placeholder={tr('Озеро, перевал, село…')}
             placeholderTextColor="#8a8a85"
             style={styles.input}
             returnKeyType="search"
             autoCorrect={false}
-            accessibilityLabel="Поиск мест"
+            accessibilityLabel={tr('Поиск мест')}
           />
           {q ? (
-            <Pressable onPress={() => setQ('')} hitSlop={10} accessibilityLabel="Очистить поиск" style={{ padding: 6 }}>
+            <Pressable onPress={() => setQ('')} hitSlop={10} accessibilityLabel={tr('Очистить поиск')} style={{ padding: 6 }}>
               <Icon name="close" size={18} color={color.mutedOnDark} />
             </Pressable>
           ) : null}
-          <Pressable onPress={openSheet} style={styles.filterBtn} accessibilityRole="button" accessibilityLabel="Фильтры">
+          <Pressable onPress={openSheet} style={styles.filterBtn} accessibilityRole="button" accessibilityLabel={tr('Фильтры')}>
             <Icon name="filter" size={19} color={color.black} strokeWidth={2} />
           </Pressable>
         </View>
@@ -113,13 +114,13 @@ export default function Home() {
         {filtered ? (
           <View style={styles.tags}>
             {Object.entries(f).map(([k, v]) => (
-              <Pressable key={k} onPress={() => (k === 'q' ? setQ('') : remove(k as keyof typeof f))} style={styles.tagOn} accessibilityRole="button" accessibilityLabel={`Убрать фильтр ${tagLabel(k, v)}`}>
+              <Pressable key={k} onPress={() => (k === 'q' ? setQ('') : remove(k as keyof typeof f))} style={styles.tagOn} accessibilityRole="button" accessibilityLabel={tr('Убрать фильтр {f}', { f: tagLabel(k, v) })}>
                 <Text style={styles.tagText}>{tagLabel(k, v)}</Text>
                 <Icon name="close" size={14} color={color.lime} strokeWidth={2.2} />
               </Pressable>
             ))}
             <Text style={styles.counter}>
-              {results.length} {plural(results.length, 'место', 'места', 'мест')}
+              {results.length} {pl(results.length, 'место', 'места', 'мест')}
             </Text>
           </View>
         ) : (
@@ -127,7 +128,7 @@ export default function Home() {
             {rails.season.length > 0 && (
               <View>
                 <View style={styles.gutter}>
-                  <SectionHeader title={`Хорошо в ${MONTHS_IN[m]}`} more="Все" onMore={() => show({ season: true })} />
+                  <SectionHeader title={tr('Хорошо в {month}', { month: monthIn(m) })} more={tr('Все')} onMore={() => show({ season: true })} />
                 </View>
                 <Rail data={rails.season} />
               </View>
@@ -138,11 +139,11 @@ export default function Home() {
               keyExtractor={([k]) => k}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: spacing.screenGutter, gap: spacing.chipGap, paddingTop: 26 }}
-              renderItem={({ item: [k, n] }) => <Chip label={k} icon={catIcon(k)} count={n} onPress={() => show({ cat: k })} />}
+              renderItem={({ item: [k, n] }) => <Chip label={tr(k)} icon={catIcon(k)} count={n} onPress={() => show({ cat: k })} />}
             />
             <View style={[styles.gutter, { paddingTop: spacing.sectionGap }]}>
-              <SectionHeader title="Лучше всего изучено" more="Все" onMore={() => show({ best: true })} />
-              <Text style={styles.note}>Индекс — полнота и свежесть проверенных данных</Text>
+              <SectionHeader title={tr('Лучше всего изучено')} more={tr('Все')} onMore={() => show({ best: true })} />
+              <Text style={styles.note}>{tr('Индекс — полнота и свежесть проверенных данных')}</Text>
               <View style={{ gap: 10 }}>
                 {rails.best.map((p) => (
                   <RowPlaceCard key={p.id} place={p} />
@@ -152,21 +153,21 @@ export default function Home() {
             {rails.nocar.length > 0 && (
               <View style={{ paddingTop: spacing.sectionGap }}>
                 <View style={styles.gutter}>
-                  <SectionHeader title="Можно без машины" more="Все" onMore={() => show({ nocar: true })} />
+                  <SectionHeader title={tr('Можно без машины')} more={tr('Все')} onMore={() => show({ nocar: true })} />
                 </View>
                 <Rail data={rails.nocar} />
               </View>
             )}
             {rails.near.length > 0 && (
               <View style={[styles.gutter, { paddingTop: spacing.sectionGap, gap: 10 }]}>
-                <SectionHeader title={`Недалеко от ${rails.hub.n}`} />
+                <SectionHeader title={tr('Недалеко от {hub}', { hub: tr(rails.hub.n) })} />
                 {rails.near.map((p) => (
-                  <RowPlaceCard key={p.id} place={p} sub={`≈${Math.round(haversine(p.ll!, rails.hub.ll))} км по прямой · ${p.s.acc}`} />
+                  <RowPlaceCard key={p.id} place={p} sub={tr('≈{km} км по прямой · {acc}', { km: Math.round(haversine(p.ll!, rails.hub.ll)), acc: dataLabel(p.s.acc) })} />
                 ))}
               </View>
             )}
             <View style={[styles.gutter, { paddingTop: spacing.sectionGap }]}>
-              <SectionHeader title="Все места" more="Фильтры" onMore={openSheet} />
+              <SectionHeader title={tr('Все места')} more={tr('Фильтры')} onMore={openSheet} />
             </View>
           </>
         )}
@@ -192,8 +193,8 @@ export default function Home() {
             <View style={styles.emptyIcon}>
               <Icon name="search" size={20} color={color.black} strokeWidth={2} />
             </View>
-            <Text style={styles.emptyTitle}>Ничего не нашли</Text>
-            <Text style={styles.emptyText}>Уберите один из фильтров или поищите по названию села.</Text>
+            <Text style={styles.emptyTitle}>{tr('Ничего не нашли')}</Text>
+            <Text style={styles.emptyText}>{tr('Уберите один из фильтров или поищите по названию села.')}</Text>
           </View>
         }
         ListFooterComponent={<View style={{ height: insets.bottom + 110 }} />}

@@ -7,6 +7,7 @@ import { Button, Chip } from '@/components/ui';
 import { catShort, filterPlaces, placesOf, type Filters } from '@/data/places';
 import type { CountryCode } from '@/data/types';
 import { color, spacing } from '@/theme/tokens';
+import { dataLabel, tr } from '@/i18n';
 
 const MONTHS_SHORT = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 const DIFFS: [string, string][] = [
@@ -41,36 +42,36 @@ export function FilterSheet({ visible, country, value, onApply, onClose }: Props
     <Sheet
       visible={visible}
       onClose={onClose}
-      title="Фильтры"
+      title={tr('Фильтры')}
       footer={
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Button label="Сбросить" tone="grey" style={{ flex: 1 }} onPress={() => setF({ q: f.q })} />
-          <Button label={`Показать ${count}`} style={{ flex: 1 }} onPress={() => onApply(f)} />
+          <Button label={tr('Сбросить')} tone="grey" style={{ flex: 1 }} onPress={() => setF({ q: f.q })} />
+          <Button label={tr('Показать {n}', { n: count })} style={{ flex: 1 }} onPress={() => onApply(f)} />
         </View>
       }>
-      <Group title="Когда едете">
+      <Group title={tr('Когда едете')}>
         {MONTHS_SHORT.map((m, i) => (
-          <Chip key={m} small label={m} on={f.month === i + 1} onPress={() => toggle('month', i + 1)} />
+          <Chip key={m} small label={tr(m)} on={f.month === i + 1} onPress={() => toggle('month', i + 1)} />
         ))}
       </Group>
-      <Group title="Что ищете">
+      <Group title={tr('Что ищете')}>
         {cats.map((c) => (
-          <Chip key={c} small label={c} on={f.cat === c} onPress={() => toggle('cat', c)} />
+          <Chip key={c} small label={tr(c)} on={f.cat === c} onPress={() => toggle('cat', c)} />
         ))}
       </Group>
-      <Group title="Сложность">
+      <Group title={tr('Сложность')}>
         {DIFFS.map(([k, l]) => (
-          <Chip key={k} small label={l} on={f.diff === k} onPress={() => toggle('diff', k)} />
+          <Chip key={k} small label={tr(l)} on={f.diff === k} onPress={() => toggle('diff', k)} />
         ))}
       </Group>
-      <Group title="Как добраться">
+      <Group title={tr('Как добраться')}>
         {accs.map((a) => (
-          <Chip key={a} small label={a} on={f.acc === a} onPress={() => toggle('acc', a)} />
+          <Chip key={a} small label={dataLabel(a)} on={f.acc === a} onPress={() => toggle('acc', a)} />
         ))}
-        <Chip small label="Есть маршрутка или автобус" on={!!f.nocar} onPress={() => toggle('nocar', true)} />
+        <Chip small label={tr('Есть маршрутка или автобус')} on={!!f.nocar} onPress={() => toggle('nocar', true)} />
       </Group>
-      <Group title="Ещё">
-        <Chip small label="Только с фото" on={!!f.photo} onPress={() => toggle('photo', true)} />
+      <Group title={tr('Ещё')}>
+        <Chip small label={tr('Только с фото')} on={!!f.photo} onPress={() => toggle('photo', true)} />
       </Group>
     </Sheet>
   );
