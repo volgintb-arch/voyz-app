@@ -3,7 +3,7 @@
 // Прячем сдвигом, не opacity — иначе системное стекло пропадает (docs/06_LIQUID_GLASS.md).
 import * as Haptics from 'expo-haptics';
 import type { Tabs } from 'expo-router';
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useEffect, useRef, useState, type ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,8 +28,15 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
   const x = useSharedValue(0);
   const sx = useSharedValue(1);
 
+  // ширина, при которой индикатор уже стоит на месте: первое положение — сразу, без анимации
+  const placedW = useRef(0);
   useEffect(() => {
     if (!tabW) return;
+    if (placedW.current !== tabW) {
+      x.set(state.index * tabW);
+      placedW.current = tabW;
+      return;
+    }
     if (reduce) {
       x.set(withTiming(state.index * tabW, { duration: motion.reducedCrossfade }));
       return;
@@ -38,7 +45,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
     sx.set(withSequence(withTiming(1.28, { duration: 120 }), withSpring(1, { damping: 10, stiffness: 160 })));
   }, [state.index, tabW, reduce, x, sx]);
 
-  const indicator = useAnimatedStyle(() => ({ width: tabW, transform: [{ translateX: x.value }, { scaleX: sx.value }, { scaleY: 1 - (sx.value - 1) * 0.5 } /* 1.28 → 0.86 */] }), [tabW]);
+  const indicator = useAnimatedStyle(() => ({ width: tabW, transform: [{ translateX: x.value }, { scaleX: sx.value }, { scaleY: 1 - (sx.value - 1) * 0.5 } /* 1.28 → 0.86 */] }), [tabW, state.index]);
 
   return (
     <View style={[styles.wrap, { bottom: Math.max(insets.bottom, 12) }]} pointerEvents="box-none">
