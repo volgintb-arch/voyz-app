@@ -7,8 +7,9 @@ import { Asset } from 'expo-asset';
 import { createPortal } from 'react-dom';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { COUNTRY_VIEW, HILLSHADE_PAINT, OVERLAY_LAYERS, OVERLAY_SOURCE, baseStyle, boundsOf, overlayData } from '@/geo/map-style';
+import { COUNTRY_VIEW, HILLSHADE_PAINT, SCHEME_HILLSHADE_MINZOOM, SCHEME_HILLSHADE_PAINT, reliefImageOpacity, OVERLAY_LAYERS, OVERLAY_SOURCE, baseStyle, boundsOf, overlayData } from '@/geo/map-style';
 import { ONLINE } from '@/geo/online';
+import { useOnline } from '@/lib/use-online';
 import { RELIEF_COORDS, RELIEF_IMAGES } from '@/geo/relief.generated';
 
 import type { MapCamera, VoyzMapProps, VoyzMapRef } from './types';
@@ -21,6 +22,7 @@ export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
 ) {
   const box = useRef<View>(null);
   const map = useRef<MlMap | null>(null);
+  const online = useOnline();
   const [ready, setReady] = useState(0); // счётчик загрузок стиля — после смены стиля слои добавляем заново
   const markers = useRef(new globalThis.Map<string, { m: MlMarker; el: HTMLDivElement }>());
   const [els, setEls] = useState<{ id: string; el: HTMLDivElement }[]>([]);
@@ -124,15 +126,24 @@ export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
   useEffect(() => {
     const m = map.current;
     if (!ready || !m || loaded.current !== m) return;
-    if (m.getLayer('relief')) m.setLayoutProperty('relief', 'visibility', relief ? 'visible' : 'none');
-    const need = (relief && mode === 'detail') || terrain3d;
+    if (m.getLayer('relief')) {
+      m.setLayoutProperty('relief', 'visibility', relief ? 'visible' : 'none');
+      m.setPaintProperty('relief', 'raster-opacity', reliefImageOpacity(online));
+    }
+    const sharp = relief && (mode === 'detail' || online);
+    const need = sharp || terrain3d;
     if (need && !m.getSource('dem')) {
       m.addSource('dem', { type: 'raster-dem', tiles: ONLINE.terrainTiles, encoding: ONLINE.terrainEncoding, tileSize: 256, maxzoom: ONLINE.terrainMaxZoom });
       // в схеме — под озёра; в онлайн-стиле — под первый слой подписей
       const before = mode === 'scheme' ? 'lakes' : m.getStyle().layers.find((l) => l.type === 'symbol')?.id;
-      m.addLayer({ id: 'hillshade', type: 'hillshade', source: 'dem', paint: HILLSHADE_PAINT } as LayerSpecification, before);
+      m.addLayer(
+        mode === 'scheme'
+          ? ({ id: 'hillshade', type: 'hillshade', source: 'dem', minzoom: SCHEME_HILLSHADE_MINZOOM, paint: SCHEME_HILLSHADE_PAINT } as LayerSpecification)
+          : ({ id: 'hillshade', type: 'hillshade', source: 'dem', paint: HILLSHADE_PAINT } as LayerSpecification),
+        before,
+      );
     }
-    if (m.getLayer('hillshade')) m.setLayoutProperty('hillshade', 'visibility', relief && mode === 'detail' ? 'visible' : 'none');
+    if (m.getLayer('hillshade')) m.setLayoutProperty('hillshade', 'visibility', sharp ? 'visible' : 'none');
     if (terrain3d) {
       m.setTerrain({ source: 'dem', exaggeration: 1.4 });
       m.easeTo({ pitch: 58, duration: 600 });
@@ -140,7 +151,7 @@ export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
       m.setTerrain(null);
       m.easeTo({ pitch: 0, duration: 400 });
     }
-  }, [ready, relief, terrain3d, mode]);
+  }, [ready, relief, terrain3d, mode, online]);
 
   // маркеры: DOM-элементы maplibre, содержимое — React-порталы
   const pointsKey = points.map((p) => `${p.id}@${p.ll[0]},${p.ll[1]}`).join('|');

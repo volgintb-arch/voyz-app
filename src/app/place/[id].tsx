@@ -8,6 +8,7 @@ import Animated, { FadeIn, runOnJS, useAnimatedScrollHandler, useAnimatedStyle, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AudioGuideBar, type AudioGuideRef } from '@/components/audio-guide-bar';
+import { StandaloneTabBar, compactOnScroll, tabBarCompact } from '@/components/floating-tab-bar';
 import { Glass, GlassGroup } from '@/components/glass';
 import { Icon } from '@/components/icon';
 import { HERO_H, Hero } from '@/components/place/hero';
@@ -68,6 +69,9 @@ export default function PlaceScreen() {
   const nav = useRef<ScrollView>(null);
   const audio = useRef<AudioGuideRef>(null);
   const y = useSharedValue(0);
+  const prevY = useSharedValue(0);
+  // уходим с карточки — нижнее меню снова полное (иначе во вкладке оно останется сжатым)
+  useEffect(() => () => tabBarCompact.set(0), []);
   const [viewer, setViewer] = useState<number | null>(null);
   const [reader, setReader] = useState<ReaderKey | null>(null);
   const [ui, setUi] = useState({ compact: false, light: false, on: 'ov', trust: false });
@@ -102,6 +106,7 @@ export default function PlaceScreen() {
   };
   const handler = useAnimatedScrollHandler((e) => {
     y.value = e.contentOffset.y;
+    compactOnScroll(e.contentOffset.y, prevY);
     runOnJS(onY)(e.contentOffset.y);
   });
 
@@ -188,7 +193,7 @@ export default function PlaceScreen() {
           </View>
           <ChangeReport place={place} />
           <Footer />
-          <View style={{ height: insets.bottom + 40 }} />
+          <View style={{ height: insets.bottom + 110 }} />
         </View>
       </Animated.ScrollView>
 
@@ -230,6 +235,7 @@ export default function PlaceScreen() {
       </Animated.View>
 
       {flight && origin && !reduce ? <PhotoFlight place={place} from={flight} origin={origin} width={width} height={HERO_H} /> : null}
+      <StandaloneTabBar />
       <PhotoViewer place={place} index={viewer} onClose={() => setViewer(null)} />
       <ReaderSheet
         placeName={place.name}

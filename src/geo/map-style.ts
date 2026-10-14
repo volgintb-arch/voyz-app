@@ -101,12 +101,26 @@ export function overlayData(lines: MapLine[]): FC {
 }
 
 /** Отмывка рельефа: мягкие тени склонов в оливковой гамме Voyz, не спорят с дорогами и маркерами. */
+// Схема карты: встроенная отмывка — картинка ≈600 м/пикс (тайлы z8), при приближении она расплывается.
+// Если есть сеть, с зума 8 она плавно уступает онлайн-отмывке из тайлов высот — та чёткая до z15.
+const SHARP_FROM = 8;
+const SHARP_FULL = 9.5;
+export const reliefImageOpacity = (online: boolean) =>
+  online ? (['interpolate', ['linear'], ['zoom'], SHARP_FROM, 1, SHARP_FULL, 0] as unknown as number) : 1;
+export const SCHEME_HILLSHADE_MINZOOM = SHARP_FROM - 0.5;
+
 export const HILLSHADE_PAINT = {
   'hillshade-exaggeration': 0.5,
   'hillshade-shadow-color': '#3b4a2f',
   'hillshade-highlight-color': '#ffffff',
   'hillshade-accent-color': '#55663f',
 } as const;
+
+/** Онлайн-отмывка в схеме: проявляется вместе с исчезновением встроенной картинки. */
+export const SCHEME_HILLSHADE_PAINT = {
+  ...HILLSHADE_PAINT,
+  'hillshade-exaggeration': ['interpolate', ['linear'], ['zoom'], SHARP_FROM, 0, SHARP_FULL, HILLSHADE_PAINT['hillshade-exaggeration']] as unknown as number,
+};
 
 /** Границы набора точек [lat, lon] → [west, south, east, north]. */
 export function boundsOf(points: LatLng[]): [number, number, number, number] | null {

@@ -4,9 +4,10 @@ import { Camera, GeoJSONSource, ImageSource, Layer, Map, Marker, NativeUserLocat
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { COUNTRY_VIEW, HILLSHADE_PAINT, OVERLAY_LAYERS, OVERLAY_SOURCE, baseStyle, boundsOf, overlayData } from '@/geo/map-style';
+import { COUNTRY_VIEW, HILLSHADE_PAINT, OVERLAY_LAYERS, OVERLAY_SOURCE, SCHEME_HILLSHADE_MINZOOM, SCHEME_HILLSHADE_PAINT, baseStyle, boundsOf, overlayData, reliefImageOpacity } from '@/geo/map-style';
 import { ONLINE } from '@/geo/online';
 import { RELIEF_COORDS, RELIEF_IMAGES } from '@/geo/relief.generated';
+import { useOnline } from '@/lib/use-online';
 
 import type { MapCamera, VoyzMapProps, VoyzMapRef } from './types';
 
@@ -17,6 +18,9 @@ export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
   ref,
 ) {
   const cam = useRef<CameraRef>(null);
+  const online = useOnline();
+  // чёткий онлайн-рельеф: в подробной карте всегда, в схеме — при сети и приближении (встроенная картинка расплывается)
+  const sharp = relief && (mode === 'detail' || online);
   const view = useRef<MapCamera>({ zoom: 6, bearing: 0, pitch: 0, center: COUNTRY_VIEW[country].center });
   const mapStyle = mode === 'detail' ? ONLINE.vectorStyle : baseStyle(country);
   const data = useMemo(() => overlayData(lines), [lines]);
@@ -63,13 +67,17 @@ export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
         {relief && mode === 'scheme' ? (
           // встроенный рельеф — картинка внутри приложения, работает без сети
           <ImageSource id="relief" url={RELIEF_IMAGES[country]} coordinates={RELIEF_COORDS[country] as [[number, number], [number, number], [number, number], [number, number]]}>
-            <Layer id="relief" type="raster" beforeId="lakes" paint={{ 'raster-fade-duration': 0 }} />
+            <Layer id="relief" type="raster" beforeId="lakes" paint={{ 'raster-fade-duration': 0, 'raster-opacity': reliefImageOpacity(online) }} />
           </ImageSource>
         ) : null}
-        {(relief && mode === 'detail') || terrain3d ? (
+        {sharp || terrain3d ? (
           <RasterDEMSource id="dem" tiles={ONLINE.terrainTiles} encoding={ONLINE.terrainEncoding} tileSize={256} maxzoom={ONLINE.terrainMaxZoom}>
             {/* в схеме отмывка ложится под озёра и дороги; в онлайн-стиле id слоёв чужие — кладём поверх с прозрачностью */}
-            <Layer id="hillshade" type="hillshade" paint={HILLSHADE_PAINT} />
+            {mode === 'scheme' ? (
+              <Layer id="hillshade" type="hillshade" beforeId="lakes" minzoom={SCHEME_HILLSHADE_MINZOOM} paint={SCHEME_HILLSHADE_PAINT} />
+            ) : (
+              <Layer id="hillshade" type="hillshade" paint={HILLSHADE_PAINT} />
+            )}
           </RasterDEMSource>
         ) : null}
         <GeoJSONSource id={OVERLAY_SOURCE} data={data}>
