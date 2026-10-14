@@ -28,6 +28,12 @@ jobs:
       - run: npm ci
       - name: Сборка веб-версии
         run: npx expo export -p web --output-dir dist
+        # сервер и аналитика: Settings → Secrets and variables → Actions → Variables (пусто — офлайн-режим)
+        env:
+          EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+          EXPO_PUBLIC_API_KEY: ${{ vars.EXPO_PUBLIC_API_KEY }}
+          EXPO_PUBLIC_ANALYTICS: ${{ vars.EXPO_PUBLIC_ANALYTICS }}
+          EXPO_PUBLIC_ANALYTICS_KEY: ${{ vars.EXPO_PUBLIC_ANALYTICS_KEY }}
       - name: Прямые ссылки и папка _expo
         # 404.html = index.html — Pages отдаёт его на любой путь (/place/kg-skazka), роутер разберёт адрес сам;
         # .nojekyll — иначе Pages скрывает папки с подчёркиванием (_expo)

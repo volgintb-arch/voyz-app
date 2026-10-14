@@ -10,13 +10,14 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Splash } from '@/components/splash';
 import { ToastHost } from '@/components/toast-host';
 import { APP_MAX_W } from '@/lib/layout';
 import { registerServiceWorker } from '@/lib/web-app';
+import { flushReports } from '@/services/backend';
 import { useApp } from '@/store/app-store';
 import { color } from '@/theme/tokens';
 
@@ -36,6 +37,14 @@ export default function RootLayout() {
   const lang = useApp((s) => s.lang);
   // веб: сервис-воркер — приложение открывается без сети и ставится на главный экран
   useEffect(registerServiceWorker, []);
+  // очередь отметок уходит на сервер при запуске и при возвращении в приложение (если сервер подключён)
+  useEffect(() => {
+    flushReports();
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') flushReports();
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();

@@ -13,6 +13,7 @@
 - `docs/00_START_HERE.md` — исходная инструкция кита; `01_RESEARCH.md` — рынок; `02_UX_SPEC.md` — экраны и поведение; `03_DESIGN_SYSTEM.md` — компоненты; `04_DATA_MODEL.md` — схема данных; `05_ROADMAP.md` — этапы; `06_LIQUID_GLASS.md` — где и как применяем Liquid Glass.
 - `assets/data/places.json` (112 мест), `assets/data/geo.json` (офлайн-карта и граф дорог), фото — `assets/img/` (`<id>.jpg` 960 px, `t_<id>.jpg` 420 px).
 - `assets/audio/<id>.mp3` — **аудиогиды на все 112 мест** (нейроголос `ru-RU-DmitryNeural`, Microsoft Edge TTS). Длительности — `reference/prototype/data/audio.js`.
+- `docs/08_BACKEND.md` — как подключить сервер (Supabase) и аналитику; слой — `src/services/`, схема БД — `supabase/schema.sql`.
 - `tools/data-scripts/` — Python-скрипты, которые сгенерировали данные (для пересборки).
 
 ## Стек (бери актуальные стабильные версии на момент сборки)

@@ -20,6 +20,7 @@ import { sliceLine, type MapLine } from '@/geo/map-style';
 import { accIcon, modeIcon } from '@/lib/icon-rules';
 import { NAVIGATORS, openNavigator } from '@/lib/navigators';
 import { cut, findTel, findUrl, haversine, lead, shortUrl, telHref } from '@/lib/text';
+import { track } from '@/services/analytics';
 import { toast, useApp } from '@/store/app-store';
 import { color, motion, spacing, type } from '@/theme/tokens';
 import { dataLabel, tr } from '@/i18n';
@@ -48,6 +49,7 @@ export function RouteSection({ place, onReadHow }: { place: Place; onReadHow: ()
               onPress={() => {
                 Haptics.selectionAsync();
                 setAi(index);
+                track('route_variant_select', { place_id: place.id, variant: index });
               }}
               style={[styles.app, index === ai && styles.appOn]}
               accessibilityRole="tab"
@@ -221,6 +223,7 @@ function ApproachBody({ place, a }: { place: Place; a: Approach }) {
               <Pressable
                 key={n.id}
                 onPress={async () => {
+                  track('nav_open', { place_id: place.id, provider: n.id });
                   if (!(await openNavigator(n.id, d, place.name))) toast(tr('Не удалось открыть навигатор'), 'map');
                 }}
                 style={({ pressed }) => [styles.nav, pressed && { backgroundColor: color.mist }]}

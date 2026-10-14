@@ -11,6 +11,7 @@ import Animated, { runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, 
 
 import { Icon } from '@/components/icon';
 import { audioSeconds, audioSource } from '@/data/places';
+import { track } from '@/services/analytics';
 import { mmss } from '@/lib/text';
 import { color } from '@/theme/tokens';
 import { tr } from '@/i18n';
@@ -34,12 +35,13 @@ interface Props {
 
 export const AudioGuideBar = forwardRef<AudioGuideRef, Props>(function AudioGuideBar({ placeId, title, text }, ref) {
   const source = audioSource(placeId);
-  if (source != null) return <Recorded ref={ref} source={source} total={audioSeconds(placeId)} title={title} />;
+  const onPlay = () => track('audio_play', { place_id: placeId });
+  if (source != null) return <Recorded ref={ref} source={source} total={audioSeconds(placeId)} title={title} onPlay={onPlay} />;
   if (!text) return null;
-  return <Spoken ref={ref} text={text} />;
+  return <Spoken ref={ref} text={text} onPlay={onPlay} />;
 });
 
-const Recorded = forwardRef<AudioGuideRef, { source: number; total?: number; title: string }>(function Recorded({ source, total, title }, ref) {
+const Recorded = forwardRef<AudioGuideRef, { source: number; total?: number; title: string; onPlay: () => void }>(function Recorded({ source, total, title, onPlay }, ref) {
   const player = useAudioPlayer(source);
   const status = useAudioPlayerStatus(player);
   const [width, setWidth] = useState(1);
@@ -50,6 +52,7 @@ const Recorded = forwardRef<AudioGuideRef, { source: number; total?: number; tit
     ensureAudioMode();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (status.playing) return player.pause();
+    if (!started) onPlay();
     player.play();
     try {
       player.setActiveForLockScreen(true, { title, artist: tr('VOYZ-гид'), albumTitle: 'Voyz' });
@@ -98,7 +101,7 @@ const Recorded = forwardRef<AudioGuideRef, { source: number; total?: number; tit
   );
 });
 
-const Spoken = forwardRef<AudioGuideRef, { text: string }>(function Spoken({ text }, ref) {
+const Spoken = forwardRef<AudioGuideRef, { text: string; onPlay: () => void }>(function Spoken({ text, onPlay }, ref) {
   const [playing, setPlaying] = useState(false);
   const est = Math.round(text.split(/\s+/).length / 2.3);
   const toggle = () => {
@@ -108,6 +111,7 @@ const Spoken = forwardRef<AudioGuideRef, { text: string }>(function Spoken({ tex
       return setPlaying(false);
     }
     setPlaying(true);
+    onPlay();
     Speech.speak(text, { language: 'ru-RU', onDone: () => setPlaying(false), onStopped: () => setPlaying(false), onError: () => setPlaying(false) });
   };
   useImperativeHandle(ref, () => ({ play: () => !playing && toggle() }));

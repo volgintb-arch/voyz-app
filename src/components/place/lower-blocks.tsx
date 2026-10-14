@@ -17,6 +17,8 @@ import { catLabel, getPlace, placesOf } from '@/data/places';
 import type { Place } from '@/data/types';
 import { bringIcon } from '@/lib/icon-rules';
 import { cut, findTel, findUrl, fmtKm, lead, sentences, telHref } from '@/lib/text';
+import { track } from '@/services/analytics';
+import { flushReports } from '@/services/backend';
 import { toast, useApp } from '@/store/app-store';
 import { color, motion, spacing, type } from '@/theme/tokens';
 import { currentLang, dateLabel, pl, tr, whenLabel } from '@/i18n';
@@ -388,6 +390,8 @@ export function ChangeReport({ place }: { place: Place }) {
         onPress={() => {
           if (!sel.length) return toast(tr('Выберите, что изменилось'), 'info');
           add(place.id, sel);
+          track('change_report', { place_id: place.id, tags: sel });
+          flushReports();
           setSel([]);
           toast(tr('Спасибо! Отметка сохранена'), 'check');
         }}

@@ -18,6 +18,7 @@ import { getPlace, meta } from '@/data/places';
 import type { LatLng, Place } from '@/data/types';
 import type { MapLine } from '@/geo/map-style';
 import { sliceLine } from '@/geo/map-style';
+import { visitedIsoSet } from '@/geo/world';
 import { AVG_SPEED_KMH } from '@/geo/routing';
 import { optimizeOrder, planTrip, sampleTrip } from '@/geo/trip';
 import { fmtH, fmtKm } from '@/lib/text';
@@ -31,7 +32,9 @@ export default function TripTab() {
   const trip = useApp((s) => s.trip);
   const saved = useApp((s) => s.saved);
   const [tab, setTab] = useState<'route' | 'saved' | 'been'>('route');
-  const beenN = useApp((s) => Object.keys(s.visited).length);
+  const visited = useApp((s) => s.visited);
+  const manual = useApp((s) => s.visitedCountries);
+  const beenN = useMemo(() => visitedIsoSet(manual, visited).size, [manual, visited]);
   const plan = useMemo(() => planTrip(trip, country), [trip, country]);
   const savedHere = saved.map(getPlace).filter((p): p is Place => !!p && p.c === country);
 
@@ -39,9 +42,9 @@ export default function TripTab() {
     <ScrollView style={{ flex: 1, backgroundColor: color.black }} contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 110 }}>
       <View style={{ paddingTop: insets.top + 18, paddingHorizontal: spacing.screenGutter, paddingBottom: 60 }}>
         <Text style={styles.title} accessibilityRole="header">
-          {tr('Мой маршрут')}
+          {tab === 'been' ? tr('Мои путешествия') : tr('Мой маршрут')}
         </Text>
-        <Text style={styles.sub}>{tr('{country} · соберите поездку из сохранённых мест', { country: tr(meta.countries[country].name) })}</Text>
+        <Text style={styles.sub}>{tab === 'been' ? tr('Весь мир · отмечайте страны, где вы были') : tr('{country} · соберите поездку из сохранённых мест', { country: tr(meta.countries[country].name) })}</Text>
       </View>
       <View style={styles.sheet}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>

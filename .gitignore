@@ -44,3 +44,6 @@ example
 
 # локальные настройки Claude Code
 .claude/settings.local.json
+
+# переменные окружения с ключами — не в репозиторий (шаблон: .env.example)
+.env

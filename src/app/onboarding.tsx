@@ -9,7 +9,7 @@ import { PhotoShade } from '@/components/photo-shade';
 import { VoyzLogo } from '@/components/voyz-logo';
 import { getPlace, photoSource, places, placesOf } from '@/data/places';
 import type { CountryCode, Place } from '@/data/types';
-import { useT } from '@/i18n';
+import { pl, useT } from '@/i18n';
 import { useApp } from '@/store/app-store';
 import { color, radius, spacing, type } from '@/theme/tokens';
 
@@ -71,14 +71,14 @@ export default function Onboarding() {
           key={c}
           onPress={() => choose(c)}
           accessibilityRole="button"
-          accessibilityLabel={t('{title}, {n} мест', { title: t(title), n: placesOf(c).length })}
+          accessibilityLabel={t('{title}, {n} {word}', { title: t(title), n: placesOf(c).length, word: pl(placesOf(c).length, 'место', 'места', 'мест') })}
           style={({ pressed }) => [styles.card, pressed && { transform: [{ scale: 0.98 }] }]}>
           {cover && <Image source={photoSource(cover, 0, true)} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />}
           <PhotoShade from={0.45} to="rgba(0,0,0,.75)" />
           <View style={styles.cardRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>{t(title)}</Text>
-              <Text style={styles.cardSub}>{t('{n} мест · {sub}', { n: placesOf(c).length, sub: t(sub) })}</Text>
+              <Text style={styles.cardSub}>{t('{n} {word} · {sub}', { n: placesOf(c).length, word: pl(placesOf(c).length, 'место', 'места', 'мест'), sub: t(sub) })}</Text>
             </View>
             <View style={styles.bubble}>
               <Icon name="arrow" size={22} color={color.black} />

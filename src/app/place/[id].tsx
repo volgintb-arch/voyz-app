@@ -2,7 +2,7 @@
 // Порядок блоков как в прототипе; белый лист наезжает на чёрное; компактная шапка со scroll-spy.
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import Animated, { FadeIn, runOnJS, useAnimatedScrollHandler, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,6 +34,7 @@ import { HeartButton } from '@/components/ui';
 import { audioSeconds, getPlace } from '@/data/places';
 import { cut, mmss } from '@/lib/text';
 import { placeUrl, shareLink } from '@/lib/web-app';
+import { track } from '@/services/analytics';
 import { toast } from '@/store/app-store';
 import { color, motion, radius } from '@/theme/tokens';
 import { currentLang, tr } from '@/i18n';
@@ -70,6 +71,9 @@ export default function PlaceScreen() {
     return a ? a.y + (a.white ? whiteTop.current : 0) : undefined;
   };
   const readers = useMemo(() => (place ? buildReaders(place) : {}), [place]);
+  useEffect(() => {
+    if (place) track('place_open', { place_id: place.id });
+  }, [place]);
 
   // scroll-spy и смена темы шапки — пересчёт на JS только когда что-то поменялось
   const onY = (v: number) => {
@@ -115,6 +119,7 @@ export default function PlaceScreen() {
   };
   // ссылка на веб-версию — откроется у любого получателя, даже без установленного приложения
   const share = async () => {
+    track('share', { kind: 'place', place_id: place.id });
     const r = await shareLink(place.name, `${place.name} — ${cut(place.short, 140)}`, placeUrl(place.id));
     if (r === 'copied') toast(tr('Ссылка скопирована'), 'link');
   };

@@ -16,6 +16,7 @@ import type { Place } from '@/data/types';
 import { HUB } from '@/geo/geo-data';
 import { catIcon } from '@/lib/icon-rules';
 import { haversine } from '@/lib/text';
+import { track } from '@/services/analytics';
 import { useApp } from '@/store/app-store';
 import { hasFilters, useFilters } from '@/store/filters';
 import { color, radius, spacing, type } from '@/theme/tokens';
@@ -211,6 +212,7 @@ export default function Home() {
         onClose={() => setSheet(false)}
         onApply={(nf) => {
           setSheet(false);
+          track('filter_apply', { filters: Object.keys(nf).filter((k) => nf[k as keyof typeof nf] != null), results: filterPlaces(country, nf).length });
           show(nf);
         }}
       />

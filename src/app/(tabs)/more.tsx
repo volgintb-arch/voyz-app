@@ -11,6 +11,7 @@ import { VoyzLogo } from '@/components/voyz-logo';
 import { meta, placesOf } from '@/data/places';
 import { WEB_URL, canSaveOffline, saveForOffline, shareLink } from '@/lib/web-app';
 import type { CountryCode } from '@/data/types';
+import { track } from '@/services/analytics';
 import { toast, useApp } from '@/store/app-store';
 import { useFilters } from '@/store/filters';
 import { color, radius, spacing, type } from '@/theme/tokens';
@@ -22,7 +23,7 @@ export default function MoreTab() {
   const insets = useSafeAreaInsets();
   const country = useApp((s) => s.country) ?? 'kg';
   const setCountry = useApp((s) => s.setCountry);
-  const reports = useApp((s) => s.reports.length);
+  const reports = useApp((s) => s.reports.filter((r) => !r.sent).length);
   const setLang = useApp((s) => s.setLang);
   const lang = currentLang();
   const L = placesOf(country);
@@ -34,6 +35,7 @@ export default function MoreTab() {
 
   const saveMap = async () => {
     if (!supportsDetailedOffline()) return toast(tr('Сохранение доступно на опубликованном сайте'), 'map');
+    track('offline_download', { kind: 'map', country });
     setMapPct(0);
     try {
       await downloadDetailedMap(country, setMapPct);
@@ -48,6 +50,7 @@ export default function MoreTab() {
 
   const saveOffline = async () => {
     if (!canSaveOffline()) return toast(tr('Сохранение доступно на опубликованном сайте'), 'download');
+    track('offline_download', { kind: 'media' });
     setOffline({ done: 0, total: 1 });
     try {
       await saveForOffline((done, total) => setOffline({ done, total }));
@@ -103,7 +106,7 @@ export default function MoreTab() {
                 {!offline ? tr('Сохранить для офлайна · ~45 МБ') : offline.done < offline.total ? tr('Сохраняем… {p}%', { p: Math.round((offline.done / offline.total) * 100) }) : tr('Сохранено — работает без интернета ✓')}
               </Text>
             </Pressable>
-            <Pressable onPress={async () => (await shareLink('Voyz', 'Voyz — путеводитель по Кыргызстану и Алтаю', WEB_URL + '/')) === 'copied' && toast(tr('Ссылка скопирована'), 'link')} style={[styles.offBtn, { backgroundColor: color.paper, marginTop: 8 }]} accessibilityRole="button">
+            <Pressable onPress={async () => (track('share', { kind: 'app' }), await shareLink('Voyz', 'Voyz — путеводитель по Кыргызстану и Алтаю', WEB_URL + '/')) === 'copied' && toast(tr('Ссылка скопирована'), 'link')} style={[styles.offBtn, { backgroundColor: color.paper, marginTop: 8 }]} accessibilityRole="button">
               <Icon name="share" size={18} />
               <Text style={[styles.offT, { color: color.black }]}>{tr('Поделиться ссылкой на Voyz')}</Text>
             </Pressable>
