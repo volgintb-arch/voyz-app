@@ -8,7 +8,6 @@
     "scheme": "voyz",
     "userInterfaceStyle": "dark",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "app.voyz.guide",
       "supportsTablet": false,
       "infoPlist": {
@@ -50,7 +49,7 @@
         {
           "backgroundColor": "#000000",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 220
         }
       ],
       [

@@ -61,11 +61,15 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
                 <Icon name={ICONS[route.name] ?? 'dot'} size={22} color={tint} />
                 {route.name === 'trip' && tripCount > 0 && (
                   <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{tripCount}</Text>
+                    <Text style={styles.badgeText} maxFontSizeMultiplier={1}>
+                      {tripCount}
+                    </Text>
                   </View>
                 )}
               </View>
-              <Text style={[styles.label, { color: tint }]}>{label}</Text>
+              <Text style={[styles.label, { color: tint }]} maxFontSizeMultiplier={1.15} numberOfLines={1}>
+                {label}
+              </Text>
             </Pressable>
           );
         })}

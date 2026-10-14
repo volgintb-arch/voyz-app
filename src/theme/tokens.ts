@@ -11,7 +11,8 @@ export const color = {
   paper: '#FFFFFF', // белый лист поверх чёрного hero
   mist: '#F1F1EF', // вторичные кнопки, чипсы, плитки
   line: '#E7E7E2', // разделители
-  muted: '#8C8C88', // вторичный текст
+  // вторичный текст: в макете #8C8C88, но на белом это 3.4:1 — ниже AA; #6E6E6A даёт 5.1:1
+  muted: '#6E6E6A',
   mutedOnDark: '#A9A9A4', // вторичный текст на чёрном
   mapLand: '#DEEAD2',
   mapLandOther: '#E9EEE2',

@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   zoomLine: { width: 24, height: 1, backgroundColor: 'rgba(0,0,0,.12)' },
   ctlBtn: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   rail: { position: 'absolute', left: 0, right: 0, flexGrow: 0 },
-  card: { width: CARD_W, height: 84, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: color.paper, borderRadius: 22, padding: 10, borderWidth: 2, borderColor: 'transparent' },
+  card: { width: CARD_W, minHeight: 84, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: color.paper, borderRadius: 22, padding: 10, borderWidth: 2, borderColor: 'transparent' },
   cardMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0 },
   th: { width: 62, height: 62, borderRadius: 14, overflow: 'hidden' },
   cardTitle: { fontFamily: 'Mulish_700Bold', fontSize: 14.5, lineHeight: 18, color: color.black },

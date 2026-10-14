@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   hazT: { flex: 1, fontFamily: 'Mulish_400Regular', fontSize: 13.5, lineHeight: 19.5, color: '#262624' },
   navH: { fontFamily: 'Mulish_700Bold', fontSize: 15, color: color.black, marginTop: 20, marginBottom: 10 },
   navs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  nav: { width: '48.5%', flexDirection: 'row', alignItems: 'center', gap: 9, height: 46, borderRadius: 14, borderWidth: 1.5, borderColor: color.line, paddingHorizontal: 12 },
+  nav: { width: '48.5%', flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 46, paddingVertical: 8, borderRadius: 14, borderWidth: 1.5, borderColor: color.line, paddingHorizontal: 12 },
   navBadge: { width: 24, height: 24, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   navBadgeT: { fontFamily: 'Mulish_800ExtraBold', fontSize: 11 },
   navT: { fontFamily: 'Mulish_600SemiBold', fontSize: 13.5, color: color.black, flex: 1 },
