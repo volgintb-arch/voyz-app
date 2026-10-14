@@ -1,0 +1,49 @@
+# Веб-версия Voyz на GitHub Pages: собирается и публикуется при каждом пуше в main.
+# Адрес: https://volgintb-arch.github.io/voyz-app/
+name: Веб-версия на GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Сборка веб-версии
+        run: npx expo export -p web --output-dir dist
+      - name: Прямые ссылки и папка _expo
+        # 404.html = index.html — Pages отдаёт его на любой путь (/place/kg-skazka), роутер разберёт адрес сам;
+        # .nojekyll — иначе Pages скрывает папки с подчёркиванием (_expo)
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
