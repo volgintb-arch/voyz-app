@@ -48,10 +48,11 @@ export function Glass({ tint, clear, interactive, dark, style, children, ...rest
   }
   return (
     <View style={[style, styles.clip]} {...rest}>
-      <BlurView intensity={clear ? 30 : 50} tint={dark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      <BlurView intensity={clear ? 30 : 50} tint={dark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, styles.under]} />
       <View
         style={[
           StyleSheet.absoluteFill,
+          styles.under,
           { backgroundColor: tint ?? (dark ? 'rgba(14,14,14,.55)' : 'rgba(255,255,255,.45)') },
           styles.rim,
         ]}
@@ -79,6 +80,9 @@ export function GlassGroup({ spacing = 8, style, children, ...rest }: ViewProps 
 }
 
 const styles = StyleSheet.create({
-  clip: { overflow: 'hidden' },
+  // zIndex 0 создаёт контекст наложения, слои стекла (zIndex -1) уходят под содержимое — иначе в вебе
+  // абсолютно позиционированные слои рисуются поверх иконок и текста
+  clip: { overflow: 'hidden', zIndex: 0 },
+  under: { zIndex: -1 },
   rim: { borderWidth: StyleSheet.hairlineWidth * 2, borderColor: 'rgba(255,255,255,.22)', borderRadius: 999 },
 });

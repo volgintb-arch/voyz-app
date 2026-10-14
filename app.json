@@ -14,7 +14,14 @@
       "infoPlist": {
         "UIBackgroundModes": [
           "audio"
-        ]
+        ],
+        "LSApplicationQueriesSchemes": [
+          "yandexmaps",
+          "yandexnavi",
+          "dgis",
+          "comgooglemaps"
+        ],
+        "NSLocationWhenInUseUsageDescription": "Voyz показывает, где вы на карте, и строит маршрут до места."
       }
     },
     "android": {
@@ -41,9 +48,21 @@
           "imageWidth": 76
         }
       ],
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "enableBackgroundPlayback": true
+        }
+      ],
       "expo-asset",
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Voyz показывает, где вы на карте, и строит маршрут до места."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

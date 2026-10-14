@@ -1,166 +1,227 @@
-// Карточка места — пока каркас: hero, заголовок, плитки, аудиогид, «Почему стоит приехать».
-// Полный набор блоков по docs/02_UX_SPEC.md, shared element и параллакс — шаг 4 плана.
-import { Image } from 'expo-image';
+// Карточка места — главный экран (docs/02_UX_SPEC.md → 2, макет design/reference/voyz_place_card_mockup.jpg).
+// Порядок блоков как в прототипе; белый лист наезжает на чёрное; компактная шапка со scroll-spy.
 import { router, useLocalSearchParams } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { ChevronLeft, Heart, MapPin, Mountain, Plus, Check } from 'lucide-react-native';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import Animated, { FadeIn, runOnJS, useAnimatedScrollHandler, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AudioGuideBar } from '@/components/audio-guide-bar';
-import { PhotoShade } from '@/components/photo-shade';
-import { getPlace, locLine, photoSource } from '@/data/places';
-import { useApp } from '@/store/app-store';
-import { color, radius, spacing, type } from '@/theme/tokens';
+import { AudioGuideBar, type AudioGuideRef } from '@/components/audio-guide-bar';
+import { Glass, GlassGroup } from '@/components/glass';
+import { Icon } from '@/components/icon';
+import { HERO_H, Hero } from '@/components/place/hero';
+import {
+  BringBlock,
+  ChangeReport,
+  FoodBlock,
+  Footer,
+  HikesBlock,
+  ImportantBlock,
+  NearbyBlock,
+  SeasonBlock,
+  StaysBlock,
+  TrustBlock,
+  UsefulBlock,
+  WantCard,
+} from '@/components/place/lower-blocks';
+import { PhotoViewer } from '@/components/place/photo-viewer';
+import { ReaderSheet } from '@/components/place/reader-sheet';
+import { buildReaders, type ReaderKey } from '@/components/place/readers';
+import { RouteSection } from '@/components/place/route-section';
+import { InfoGrid, KeyFacts, MediaBlock, WhySection } from '@/components/place/top-blocks';
+import { HeartButton } from '@/components/ui';
+import { audioSeconds, getPlace } from '@/data/places';
+import { cut, mmss } from '@/lib/text';
+import { color, motion, radius } from '@/theme/tokens';
+
+const SECTIONS: [string, string][] = [
+  ['ov', 'Обзор'],
+  ['route', 'Дорога'],
+  ['imp', 'Важно'],
+  ['stay', 'Ночлег'],
+  ['site', 'На месте'],
+  ['src', 'Проверка'],
+];
 
 export default function PlaceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const place = getPlace(id);
   const insets = useSafeAreaInsets();
-  const saved = useApp((s) => s.saved.includes(id));
-  const added = useApp((s) => s.trip.includes(id));
-  const toggleSaved = useApp((s) => s.toggleSaved);
-  const addToTrip = useApp((s) => s.toggleTrip);
+  const { height } = useWindowDimensions();
+  const reduce = useReducedMotion();
+  const scroll = useRef<Animated.ScrollView>(null);
+  const nav = useRef<ScrollView>(null);
+  const audio = useRef<AudioGuideRef>(null);
+  const y = useSharedValue(0);
+  const [viewer, setViewer] = useState<number | null>(null);
+  const [reader, setReader] = useState<ReaderKey | null>(null);
+  const [ui, setUi] = useState({ compact: false, light: false, on: 'ov', trust: false });
+  const anchors = useRef<Record<string, number>>({});
+  const whiteTop = useRef(0);
+  const readers = useMemo(() => (place ? buildReaders(place) : {}), [place]);
+
+  // scroll-spy и смена темы шапки — пересчёт на JS только когда что-то поменялось
+  const onY = (v: number) => {
+    let on = 'ov';
+    for (const [k] of SECTIONS) if (anchors.current[k] != null && anchors.current[k] - 140 <= v) on = k;
+    const next = { compact: v > HERO_H - 90, light: v > whiteTop.current - 60, on, trust: ui.trust || (anchors.current.src ?? Infinity) < v + height - 80 };
+    if (next.compact !== ui.compact || next.light !== ui.light || next.on !== ui.on || next.trust !== ui.trust) {
+      if (next.on !== ui.on) {
+        const i = SECTIONS.findIndex(([k]) => k === next.on);
+        nav.current?.scrollTo({ x: Math.max(0, i * 78 - 60), animated: true });
+      }
+      setUi(next);
+    }
+  };
+  const handler = useAnimatedScrollHandler((e) => {
+    y.value = e.contentOffset.y;
+    runOnJS(onY)(e.contentOffset.y);
+  });
+
+  const compactStyle = useAnimatedStyle(() => ({ transform: [{ translateY: withTiming(ui.compact ? 0 : -160, { duration: reduce ? 0 : 350, easing: motion.easeStandard }) }] }), [ui.compact, reduce]);
 
   if (!place) {
     return (
       <View style={[styles.root, { paddingTop: insets.top + 60, alignItems: 'center' }]}>
-        <Text style={[type.label, { color: color.paper }]}>Место не найдено</Text>
+        <Text style={{ fontFamily: 'Mulish_600SemiBold', fontSize: 16, color: color.paper }}>Место не найдено</Text>
       </View>
     );
   }
 
-  const hero = photoSource(place, 0, true);
-  const tiles: [string, string][] = [
-    ['Сложность', place.s.diff],
-    ['Когда', place.s.when],
-    ['Доступ', place.s.acc],
-    ['Время на месте', place.s.onsite],
-  ];
+  const anchor = (k: string, inWhite = true) => (e: LayoutChangeEvent) => {
+    anchors.current[k] = e.nativeEvent.layout.y + (inWhite ? whiteTop.current : 0);
+  };
+  const jump = (k: string) => {
+    const top = anchors.current[k];
+    if (top != null) scroll.current?.scrollTo({ y: Math.max(0, top - 110), animated: !reduce });
+  };
+  const share = () => Share.share({ title: place.name, message: `${place.name} — ${cut(place.short, 140)}\nvoyz://place/${place.id}` }).catch(() => {});
+  const secs = audioSeconds(place.id);
+  const r = reader ? readers[reader] ?? null : null;
 
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
-        <View style={styles.hero}>
-          {hero ? (
-            <Image source={hero} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
-          ) : (
-            <View style={[StyleSheet.absoluteFill, styles.heroEmpty]}>
-              <Mountain size={48} color={color.mutedOnDark} strokeWidth={1.4} />
-            </View>
-          )}
-          <PhotoShade from={0.5} to="#000" />
-          <View style={styles.heroInfo}>
-            {place.rating && (
-              <Text style={styles.ratingPill}>
-                {place.rating.v} ★ {place.rating.src}
-              </Text>
-            )}
-            <Text style={styles.title}>{place.name}</Text>
-            <View style={styles.locRow}>
-              <MapPin size={14} color={color.mutedOnDark} strokeWidth={1.8} />
-              <Text style={styles.loc}>{locLine(place)}</Text>
-            </View>
-          </View>
+      <StatusBar style={ui.light ? 'dark' : 'light'} />
+      <Animated.ScrollView ref={scroll} onScroll={handler} scrollEventThrottle={16} showsVerticalScrollIndicator={false}>
+        <Animated.View entering={reduce ? FadeIn.duration(motion.reducedCrossfade) : FadeIn.duration(motion.sharedElement)}>
+          <Hero place={place} scrollY={y} onPhoto={setViewer} onMapThumb={() => jump('route')} />
+        </Animated.View>
+        <InfoGrid place={place} />
+        <View onLayout={anchor('ov', false)}>
+          <WhySection place={place} onRead={() => setReader('guide')} />
         </View>
 
-        <View style={styles.dark}>
-          <View style={styles.grid}>
-            {tiles.map(([k, v]) => (
-              <View key={k} style={styles.tile}>
-                <Text style={styles.tileK}>{k}</Text>
-                <Text style={styles.tileV} numberOfLines={2}>
-                  {v || 'пока не подтверждено'}
-                </Text>
-              </View>
+        <View style={styles.white} onLayout={(e) => (whiteTop.current = e.nativeEvent.layout.y)}>
+          <View style={{ paddingHorizontal: 20, paddingTop: 22 }}>
+            <AudioGuideBar ref={audio} placeId={place.id} title={place.name} text={place.guide} />
+          </View>
+          <KeyFacts place={place} />
+          <MediaBlock place={place} onView={setViewer} />
+          <View onLayout={anchor('route')}>
+            <RouteSection place={place} onReadHow={() => setReader('how')} />
+          </View>
+          <WantCard place={place} />
+          <SeasonBlock place={place} onRead={() => setReader('season')} />
+          <BringBlock place={place} />
+          <View onLayout={anchor('imp')}>
+            <ImportantBlock place={place} onRead={() => setReader('warn')} />
+          </View>
+          <View onLayout={anchor('stay')}>
+            <StaysBlock place={place} onRead={() => setReader('stay')} />
+            <FoodBlock place={place} />
+          </View>
+          <View onLayout={anchor('site')}>
+            <HikesBlock place={place} onRead={() => setReader('hikes')} />
+            <UsefulBlock readers={readers} onRead={setReader} />
+          </View>
+          <NearbyBlock place={place} onMap={() => router.navigate({ pathname: '/map', params: { focus: place.id } })} />
+          <View onLayout={anchor('src')}>
+            <TrustBlock place={place} visible={ui.trust} onRead={() => setReader('src')} />
+          </View>
+          <ChangeReport place={place} />
+          <Footer />
+          <View style={{ height: insets.bottom + 40 }} />
+        </View>
+      </Animated.ScrollView>
+
+      {/* кнопки над hero: назад; поделиться и сердце — одной стеклянной группой */}
+      {!ui.compact ? (
+        <View style={[styles.topBtns, { top: insets.top + 10 }]} pointerEvents="box-none">
+          <RoundGlass onPress={() => router.back()} label="Назад" icon="back" />
+          <GlassGroup spacing={12}>
+            <RoundGlass onPress={share} label="Поделиться" icon="share" />
+            <Glass clear dark interactive style={styles.glassBtn}>
+              <HeartButton id={place.id} size={22} />
+            </Glass>
+          </GlassGroup>
+        </View>
+      ) : null}
+
+      {/* компактная шапка: тёмная над чёрным, светлая над белым */}
+      <Animated.View style={[styles.compactWrap, compactStyle]} pointerEvents={ui.compact ? 'auto' : 'none'}>
+        <Glass dark={!ui.light} tint={ui.light ? 'rgba(255,255,255,.86)' : 'rgba(10,10,10,.72)'} style={[styles.compact, { paddingTop: insets.top + 6 }]}>
+          <View style={styles.compactRow}>
+            <Pressable onPress={() => router.back()} style={[styles.smallBtn, { backgroundColor: 'rgba(127,127,127,.18)' }]} accessibilityRole="button" accessibilityLabel="Назад">
+              <Icon name="back" size={20} color={ui.light ? color.black : color.paper} />
+            </Pressable>
+            <Text style={[styles.ttl, { color: ui.light ? color.black : color.paper }]} numberOfLines={1}>
+              {place.name}
+            </Text>
+            <View style={[styles.smallBtn, { backgroundColor: 'rgba(127,127,127,.18)' }]}>
+              <HeartButton id={place.id} size={20} tint={ui.light ? color.black : color.paper} onDark={!ui.light} />
+            </View>
+          </View>
+          <ScrollView ref={nav} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.secnav}>
+            {SECTIONS.map(([k, n]) => (
+              <Pressable key={k} onPress={() => jump(k)} style={[styles.navChip, ui.on === k && { backgroundColor: color.lime }]} accessibilityRole="button" accessibilityState={{ selected: ui.on === k }}>
+                <Text style={[styles.navChipT, { color: ui.on === k ? color.black : ui.light ? color.black : color.paper }]}>{n}</Text>
+              </Pressable>
             ))}
-          </View>
+          </ScrollView>
+        </Glass>
+      </Animated.View>
 
-          <Text style={styles.secTitle}>Почему стоит приехать</Text>
-          <Text style={styles.body}>{place.guide || place.short}</Text>
-        </View>
-
-        <View style={styles.sheet}>
-          <AudioGuideBar placeId={place.id} />
-          <Pressable
-            onPress={() => {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              addToTrip(place.id);
-            }}
-            disabled={added}
-            accessibilityRole="button"
-            style={[styles.tripBtn, added && { opacity: 0.6 }]}>
-            {added ? <Check size={20} color={color.black} /> : <Plus size={20} color={color.black} />}
-            <Text style={type.label}>{added ? 'Уже в маршруте' : 'Добавить в маршрут'}</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
-
-      <View style={[styles.topBtns, { top: insets.top + 10 }]} pointerEvents="box-none">
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Назад" style={styles.round}>
-          <ChevronLeft size={24} color={color.paper} strokeWidth={1.8} />
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            toggleSaved(place.id);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={saved ? 'Убрать из избранного' : 'В избранное'}
-          style={styles.round}>
-          <Heart size={22} color={saved ? color.lime : color.paper} fill={saved ? color.lime : 'transparent'} strokeWidth={1.8} />
-        </Pressable>
-      </View>
+      <PhotoViewer place={place} index={viewer} onClose={() => setViewer(null)} />
+      <ReaderSheet
+        placeName={place.name}
+        reader={r}
+        onClose={() => setReader(null)}
+        onListen={
+          reader === 'guide'
+            ? () => {
+                setReader(null);
+                audio.current?.play();
+              }
+            : undefined
+        }
+        listenLabel={secs ? `Послушать · ${mmss(secs)}` : 'Послушать'}
+      />
     </View>
+  );
+}
+
+function RoundGlass({ onPress, label, icon }: { onPress: () => void; label: string; icon: 'back' | 'share' }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+      <Glass clear dark interactive style={styles.glassBtn}>
+        <Icon name={icon} size={22} color={color.paper} />
+      </Glass>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.black },
-  hero: { height: 460, justifyContent: 'flex-end' },
-  heroEmpty: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#151515' },
-  heroInfo: { padding: spacing.screenGutter, paddingBottom: 14 },
-  ratingPill: {
-    alignSelf: 'flex-start',
-    ...type.caption,
-    fontFamily: 'Mulish_700Bold',
-    color: color.black,
-    backgroundColor: 'rgba(255,255,255,.88)',
-    borderRadius: 999,
-    overflow: 'hidden',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginBottom: 10,
-  },
-  title: { ...type.heroTitle, color: color.paper },
-  locRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
-  loc: { ...type.caption, color: color.mutedOnDark },
-  dark: { paddingHorizontal: spacing.screenGutter, paddingBottom: 60 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', borderRadius: 28, borderWidth: 1.6, borderColor: color.lime, padding: 8, marginTop: 6 },
-  tile: { width: '50%', padding: 10 },
-  tileK: { ...type.label, color: color.paper },
-  tileV: { ...type.caption, color: color.mutedOnDark, marginTop: 2 },
-  secTitle: { ...type.sectionTitle, color: color.paper, marginTop: spacing.sectionGap, marginBottom: 14 },
-  body: { ...type.body, color: color.paper },
-  sheet: {
-    backgroundColor: color.paper,
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    marginTop: -34,
-    padding: spacing.screenGutter,
-    paddingTop: 24,
-    gap: 12,
-    minHeight: 300,
-  },
-  tripBtn: {
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: color.mist,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
+  white: { backgroundColor: color.paper, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, marginTop: -34 },
   topBtns: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
-  round: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,.4)', alignItems: 'center', justifyContent: 'center' },
+  glassBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  compactWrap: { position: 'absolute', left: 0, right: 0, top: 0 },
+  compact: { paddingBottom: 10, borderRadius: 0 },
+  compactRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16 },
+  smallBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  ttl: { flex: 1, fontFamily: 'Mulish_700Bold', fontSize: 15 },
+  secnav: { gap: 6, paddingHorizontal: 16, paddingTop: 8 },
+  navChip: { height: 30, paddingHorizontal: 12, borderRadius: 999, backgroundColor: 'rgba(127,127,127,.16)', justifyContent: 'center' },
+  navChipT: { fontFamily: 'Mulish_700Bold', fontSize: 12.5 },
 });
