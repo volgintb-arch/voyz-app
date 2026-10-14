@@ -1,6 +1,6 @@
 // Слой работы с сервером. Контракт описан в docs/08_BACKEND.md, схема БД — supabase/schema.sql.
 // Реализация — обычный REST в стиле PostgREST (Supabase из коробки); другой сервер — поменять только этот файл.
-import { useApp, type Report } from '@/store/app-store';
+import { useApp, type MyReview, type Report } from '@/store/app-store';
 
 import { backendEnabled, config } from './config';
 
@@ -49,9 +49,27 @@ export async function flushReports(): Promise<number> {
 }
 
 /** Отзыв уходит на модерацию; в приложении показываются только одобренные. */
-export async function submitReview(r: ReviewInput): Promise<void> {
+export async function submitReview(r: ReviewInput & { clientId?: string; lang?: string }): Promise<void> {
   if (!backendEnabled()) throw new Error('backend-disabled');
-  await post('reviews', { place_id: r.placeId, rating: r.rating, text: r.text, visited_at: r.visitedAt, author: r.author, photos: r.photos ?? [] });
+  await post('reviews', { client_id: r.clientId, place_id: r.placeId, rating: r.rating, text: r.text, visited_at: r.visitedAt, author: r.author, lang: r.lang, photos: r.photos ?? [] });
+}
+
+/** Отправить свои отзывы из очереди (пишутся офлайн, уходят при появлении сети). */
+export async function flushReviews(): Promise<number> {
+  if (!backendEnabled()) return 0;
+  const { myReviews, markReviewsSent, visited } = useApp.getState();
+  const pending = myReviews.filter((r) => !r.sent);
+  let n = 0;
+  for (const r of pending as MyReview[]) {
+    try {
+      await submitReview({ clientId: r.cid, placeId: r.id, rating: r.rating, text: r.text, author: r.author, lang: r.lang, visitedAt: visited[r.id]?.slice(0, 10) });
+      markReviewsSent([r.cid]);
+      n++;
+    } catch {
+      break; // нет сети или сервер недоступен — остальные попробуем позже
+    }
+  }
+  return n;
 }
 
 /** Одобренные отзывы о месте (новые сверху). Без сервера — пустой список. */

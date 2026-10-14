@@ -17,7 +17,8 @@ import { Splash } from '@/components/splash';
 import { ToastHost } from '@/components/toast-host';
 import { APP_MAX_W } from '@/lib/layout';
 import { registerServiceWorker } from '@/lib/web-app';
-import { flushReports } from '@/services/backend';
+import { hasFlight } from '@/lib/photo-flight';
+import { flushReports, flushReviews } from '@/services/backend';
 import { useApp } from '@/store/app-store';
 import { color } from '@/theme/tokens';
 
@@ -40,8 +41,12 @@ export default function RootLayout() {
   // очередь отметок уходит на сервер при запуске и при возвращении в приложение (если сервер подключён)
   useEffect(() => {
     flushReports();
+    flushReviews();
     const sub = AppState.addEventListener('change', (s) => {
-      if (s === 'active') flushReports();
+      if (s === 'active') {
+        flushReports();
+        flushReviews();
+      }
     });
     return () => sub.remove();
   }, []);
@@ -60,7 +65,11 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
         {/* push: слайд справа, свайп от левого края назад (iOS), системная «назад» на Android */}
-        <Stack.Screen name="place/[id]" options={{ animation: 'slide_from_right', gestureEnabled: true, animationDuration: 460 }} />
+        <Stack.Screen
+          name="place/[id]"
+          // из карточки списка фото «летит» в hero само — экран под ним появляется без сдвига
+          options={({ route }) => ({ animation: hasFlight((route.params as { id?: string } | undefined)?.id) ? 'fade' : 'slide_from_right', gestureEnabled: true, animationDuration: hasFlight((route.params as { id?: string } | undefined)?.id) ? 160 : 460 })}
+        />
       </Stack>
       <ToastHost />
       {splash ? <Splash onDone={() => setSplash(false)} /> : null}

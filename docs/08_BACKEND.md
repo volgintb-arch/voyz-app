@@ -7,7 +7,7 @@
 | Файл | Что делает |
 |---|---|
 | `src/services/config.ts` | Читает `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_API_KEY`, `EXPO_PUBLIC_ANALYTICS`, `EXPO_PUBLIC_ANALYTICS_KEY` |
-| `src/services/backend.ts` | `flushReports()` — отправка очереди отметок; `submitReview()` — отзыв на модерацию; `fetchReviews(placeId)` — одобренные отзывы |
+| `src/services/backend.ts` | `flushReports()` — отправка очереди отметок; `flushReviews()` — отправка своих отзывов из очереди (`submitReview()`, с `client_id` против дублей); `fetchReviews(placeId)` — одобренные отзывы |
 | `src/store/app-store.ts` | Очередь отметок `reports` с `cid` (повтор не создаёт дубль) и флагом `sent`; хранится в MMKV |
 | `src/app/_layout.tsx` | Очередь уходит при запуске и при возвращении в приложение; после новой отметки — сразу |
 | `src/services/analytics.ts` | `track(name, params)` — типизированный словарь событий; адаптеры `none` / `console`; место для AppMetrica |
@@ -54,11 +54,12 @@
 | `change_report` | отправили «Заметили изменения?» | `place_id`, `tags` |
 | `filter_apply` | применили фильтры | `filters`, `results` |
 | `visited_mark` | «Я здесь был» | `place_id`, `on` |
+| `review_submit` | написали отзыв | `place_id`, `rating` |
 | `country_mark` | отметили страну на карте мира | `iso`, `on` |
 | `share` | поделились | `kind` (place / travel_map / app), `place_id` |
 | `offline_download` | скачали офлайн | `kind` (media / map), `country` |
 | `country_select`, `language_select` | сменили страну / язык | `country` / `lang` |
 
-## Что ещё нужно для отзывов в интерфейсе
+## Отзывы в интерфейсе
 
-Слой данных готов (`submitReview`, `fetchReviews`). Экран «Оставить отзыв» и блок с отзывами пользователей в карточке добавляются после подключения сервера — сейчас блок «Что говорят путешественники» показывает только сводку с открытых платформ (правило: фейковые отзывы не рисуем).
+Ничего — интерфейс готов (`src/components/place/reviews-block.tsx`). Без сервера человек видит только свои отзывы со статусом «сохранён на телефоне»; после подключения они уйдут на модерацию сами, а в карточке появятся одобренные отзывы и средняя оценка. Если таблица `reviews` уже создана по старой схеме — добавить колонки: `alter table reviews add column client_id text unique, add column lang text;`.

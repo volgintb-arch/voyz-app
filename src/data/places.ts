@@ -3,6 +3,7 @@
 import type { ImageSourcePropType } from 'react-native';
 
 import raw from '../../assets/data/places.json';
+import rawEn from '../../assets/data/places.en.json';
 import { currentLang, dataLabel, tr } from '@/i18n';
 
 import { audioDuration, audioSources, photoSources } from './media.generated';
@@ -14,8 +15,46 @@ export const meta = data.meta;
 export const places: readonly Place[] = data.places;
 const byId = new Map(places.map((p) => [p.id, p]));
 
-export const getPlace = (id: string) => byId.get(id);
-export const placesOf = (c: CountryCode) => places.filter((p) => p.c === c);
+// ---------- перевод текстов мест ----------
+// places.en.json — плоские «путь → текст» поверх русских данных (tools/i18n-build.mjs). Поля-ключи логики
+// (cat, reg, s, m) не переводятся, поэтому фильтры, категории и сезоны работают одинаково на любом языке.
+const EN = rawEn as unknown as { reviewed: string[]; places: Record<string, Record<string, string>> };
+const enCache = new Map<string, Place>();
+
+function setPath(obj: unknown, path: string, value: string) {
+  const keys = path.split('.');
+  let o = obj as Record<string, unknown>;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const next = o?.[keys[i]];
+    if (next == null || typeof next !== 'object') return;
+    o = next as Record<string, unknown>;
+  }
+  const last = keys[keys.length - 1];
+  if (o && typeof o[last] === 'string') o[last] = value;
+}
+
+function localize(p: Place): Place {
+  if (currentLang() !== 'en') return p;
+  const t = EN.places[p.id];
+  if (!t) return p;
+  const hit = enCache.get(p.id);
+  if (hit) return hit;
+  const c = JSON.parse(JSON.stringify(p)) as Place;
+  for (const k of Object.keys(t)) setPath(c, k, t[k]);
+  enCache.set(p.id, c);
+  return c;
+}
+
+/** Тексты места показаны в переводе (а не на русском). */
+export const isTranslated = (id: string) => currentLang() === 'en' && !!EN.places[id];
+/** Перевод проверен редактором (translations/en/_reviewed.json). */
+export const isReviewed = (id: string) => EN.reviewed.includes(id);
+
+export const getPlace = (id: string) => {
+  const p = byId.get(id);
+  return p && localize(p);
+};
+export const placesOf = (c: CountryCode) => places.filter((p) => p.c === c).map(localize);
 
 export const MONTHS_IN = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
 
@@ -47,7 +86,7 @@ export function catShort(cat: string): string {
 
 /** Можно добраться без своей машины (есть общественный транспорт или катер). */
 export const noCar = (p: Place) =>
-  (p.p.transport || []).some((t) => /маршрут|автобус|поезд|катер|теплоход|паром|минивэн/i.test(t.mode || ''));
+  ((byId.get(p.id) ?? p).p.transport || []).some((t) => /маршрут|автобус|поезд|катер|теплоход|паром|минивэн/i.test(t.mode || ''));
 
 export const isTop = (p: Place) => !!(p.rank && p.top);
 

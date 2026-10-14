@@ -8,6 +8,18 @@ import { track } from '@/services/analytics';
 import type { CountryCode } from '@/data/types';
 
 /** Отметка «Заметили изменения?» в очереди на отправку. */
+/** Свой отзыв: хранится на телефоне, уходит на модерацию при первой возможности. */
+export interface MyReview {
+  cid: string; // id клиента — повторная отправка не создаёт дубль
+  id: string; // place id
+  rating: 1 | 2 | 3 | 4 | 5;
+  text: string;
+  author?: string;
+  at: string;
+  lang: string;
+  sent?: boolean;
+}
+
 export interface Report {
   cid: string; // id на клиенте — повторная отправка не создаст дубль
   id: string; // место
@@ -50,6 +62,10 @@ interface AppState {
   setTrip: (ids: string[]) => void;
   toggleVisited: (id: string) => boolean; // true — отметили
   addReport: (id: string, tags: string[]) => void;
+  myReviews: MyReview[];
+  addReview: (r: Omit<MyReview, 'cid' | 'at' | 'sent'>) => void;
+  removeReview: (cid: string) => void;
+  markReviewsSent: (cids: string[]) => void;
 }
 
 export const useApp = create<AppState>()(
@@ -107,19 +123,27 @@ export const useApp = create<AppState>()(
         return !had;
       },
       addReport: (id, tags) => set({ reports: [...get().reports, { cid: newId(), id, tags, at: new Date().toISOString() }] }),
+      myReviews: [],
+      addReview: (r) => {
+        set({ myReviews: [...get().myReviews, { ...r, cid: newId(), at: new Date().toISOString() }] });
+        track('review_submit', { place_id: r.id, rating: r.rating });
+      },
+      removeReview: (cid) => set({ myReviews: get().myReviews.filter((r) => r.cid !== cid) }),
+      markReviewsSent: (cids) => set({ myReviews: get().myReviews.map((r) => (cids.includes(r.cid) ? { ...r, sent: true } : r)) }),
       markReportsSent: (cids) => set({ reports: get().reports.map((r) => (cids.includes(r.cid) ? { ...r, sent: true } : r)) }),
     }),
     {
       name: 'voyz-app',
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => mmkvStorage),
-      partialize: ({ country, lang, saved, trip, visited, visitedCountries, reports, offlineMaps }) => ({ country, lang, saved, trip, visited, visitedCountries, reports, offlineMaps }),
+      partialize: ({ country, lang, saved, trip, visited, visitedCountries, reports, myReviews, offlineMaps }) => ({ country, lang, saved, trip, visited, visitedCountries, reports, myReviews, offlineMaps }),
       // v1 хранил маршрут по дням (string[][]) — разворачиваем в плоский список
       migrate: (state, version) => {
         const s = state as Partial<AppState> & { trip?: unknown };
         if (version < 2 && Array.isArray(s.trip)) s.trip = (s.trip as unknown[]).flat().filter((x): x is string => typeof x === 'string');
         if (version < 3 && !s.visited) s.visited = {};
         // v4: у отметки свой id (сервер не примет повтор) и флаг отправки
+        if (version < 6 && !s.myReviews) s.myReviews = [];
         if (version < 5 && !s.visitedCountries) s.visitedCountries = [];
         if (version < 4 && Array.isArray(s.reports)) s.reports = (s.reports as Report[]).map((r) => ({ ...r, cid: r.cid ?? newId() }));
         return s as AppState;

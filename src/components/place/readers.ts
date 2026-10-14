@@ -30,7 +30,7 @@ export function uniqueSources(p: Place) {
 }
 
 export function warnText(p: Place) {
-  const permits = p.p.permits && !/^не нужн/i.test(p.p.permits) ? tr('Разрешения: {p}', { p: p.p.permits }) : '';
+  const permits = p.p.permits && !/^(не нужн|not (required|needed))/i.test(p.p.permits) ? tr('Разрешения: {p}', { p: p.p.permits }) : '';
   return [p.warn, permits].filter(Boolean).join(' ');
 }
 

@@ -28,11 +28,15 @@ import {
 import { PhotoViewer } from '@/components/place/photo-viewer';
 import { ReaderSheet } from '@/components/place/reader-sheet';
 import { buildReaders, type ReaderKey } from '@/components/place/readers';
+import { PhotoFlight } from '@/components/place/photo-flight';
+import { ReviewsBlock } from '@/components/place/reviews-block';
 import { RouteSection } from '@/components/place/route-section';
 import { InfoGrid, KeyFacts, MediaBlock, WhySection } from '@/components/place/top-blocks';
 import { HeartButton } from '@/components/ui';
-import { audioSeconds, getPlace } from '@/data/places';
+import { audioSeconds, getPlace, isReviewed, isTranslated } from '@/data/places';
+import { measureWin, takeFlight } from '@/lib/photo-flight';
 import { cut, mmss } from '@/lib/text';
+import { useAppSize } from '@/lib/layout';
 import { placeUrl, shareLink } from '@/lib/web-app';
 import { track } from '@/services/analytics';
 import { toast } from '@/store/app-store';
@@ -54,7 +58,12 @@ export default function PlaceScreen() {
   const place = getPlace(id);
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
+  const { width } = useAppSize();
   const reduce = useReducedMotion();
+  // полёт фото из карточки списка; при «уменьшить движение» — обычный кроссфейд
+  const [flight] = useState(() => (id ? takeFlight(id) : null));
+  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
+  const rootRef = useRef<View>(null);
   const scroll = useRef<Animated.ScrollView>(null);
   const nav = useRef<ScrollView>(null);
   const audio = useRef<AudioGuideRef>(null);
@@ -127,17 +136,22 @@ export default function PlaceScreen() {
   const r = reader ? readers[reader] ?? null : null;
 
   return (
-    <View style={styles.root}>
+    <View
+      ref={rootRef}
+      style={styles.root}
+      onLayout={() => {
+        if (flight && !origin) measureWin(rootRef.current, (x, oy) => setOrigin({ x, y: oy }));
+      }}>
       <StatusBar style={ui.light ? 'dark' : 'light'} />
       <Animated.ScrollView ref={scroll} onScroll={handler} scrollEventThrottle={16} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={reduce ? FadeIn.duration(motion.reducedCrossfade) : FadeIn.duration(motion.sharedElement)}>
+        <Animated.View entering={flight && !reduce ? undefined : reduce ? FadeIn.duration(motion.reducedCrossfade) : FadeIn.duration(motion.sharedElement)}>
           <Hero place={place} scrollY={y} onPhoto={setViewer} onMapThumb={() => jump('route')} />
         </Animated.View>
         <InfoGrid place={place} />
-        {currentLang() === 'en' ? (
+        {currentLang() === 'en' && !isReviewed(place.id) ? (
           <View style={styles.langNote}>
             <Icon name="info" size={16} color={color.lime} />
-            <Text style={styles.langNoteT}>{tr('Описание места пока на русском')}</Text>
+            <Text style={styles.langNoteT}>{isTranslated(place.id) ? tr('Описание переведено ИИ и ещё не проверено редактором') : tr('Описание места пока на русском')}</Text>
           </View>
         ) : null}
         <View onLayout={(e) => setAnchor('ov', e, false)}>
@@ -167,6 +181,7 @@ export default function PlaceScreen() {
             <HikesBlock place={place} onRead={() => setReader('hikes')} />
             <UsefulBlock readers={readers} onRead={setReader} />
           </View>
+          <ReviewsBlock place={place} />
           <NearbyBlock place={place} onMap={() => router.navigate({ pathname: '/map', params: { focus: place.id } })} />
           <View onLayout={(e) => setAnchor('src', e)}>
             <TrustBlock place={place} visible={ui.trust} onRead={() => setReader('src')} />
@@ -214,6 +229,7 @@ export default function PlaceScreen() {
         </Glass>
       </Animated.View>
 
+      {flight && origin && !reduce ? <PhotoFlight place={place} from={flight} origin={origin} width={width} height={HERO_H} /> : null}
       <PhotoViewer place={place} index={viewer} onClose={() => setViewer(null)} />
       <ReaderSheet
         placeName={place.name}

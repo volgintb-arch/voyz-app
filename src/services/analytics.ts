@@ -14,6 +14,7 @@ export type AnalyticsEvent =
   | { name: 'filter_apply'; params: { filters: string[]; results: number } }
   | { name: 'visited_mark'; params: { place_id: string; on: boolean } }
   | { name: 'country_mark'; params: { iso: string; on: boolean } }
+  | { name: 'review_submit'; params: { place_id: string; rating: number } }
   | { name: 'share'; params: { kind: 'place' | 'travel_map' | 'app'; place_id?: string } }
   | { name: 'offline_download'; params: { kind: 'media' | 'map'; country?: string } }
   | { name: 'country_select'; params: { country: string } }

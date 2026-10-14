@@ -73,7 +73,7 @@ export function WantCard({ place }: { place: Place }) {
 
 function ToursSheet({ place, visible, onClose }: { place: Place; visible: boolean; onClose: () => void }) {
   // в MVP — туры и трансферы из открытых данных места; в проде — каталог Voyz
-  const T = (place.p.transport || []).filter((t) => /тур|экскурс|трансфер|водител|гид/i.test(t.mode || ''));
+  const T = (place.p.transport || []).filter((t) => /тур|экскурс|трансфер|водител|гид|tour|excursion|transfer|driver|guide/i.test(t.mode || ''));
   return (
     <Sheet visible={visible} onClose={onClose} title={tr('Туры и трансферы')}>
       {T.length ? (

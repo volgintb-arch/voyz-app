@@ -49,7 +49,7 @@ export const telHref = (t: string) => `tel:${t.replace(/[^\d+]/g, '')}`;
 export type RichSeg = { t: string; kind?: 'num' | 'url' | 'tel' };
 
 const NUMRX =
-  /((?:≈|~|около |до |от )?\d[\d\s.,]*(?:\s?[–—-]\s?\d[\d\s.,]*)?\s?(?:км|м(?![а-яё])|ч(?![а-яё])|час[а-яё]*|мин[а-яё]*|сом[а-яё]*|руб[а-яё]*|₽|\$|°C|%|дн[а-яё]*|ноч[а-яё]*|чел[а-яё]*))/gi;
+  /((?:≈|~|около |до |от |about |up to |from )?\d[\d\s.,]*(?:\s?[–—-]\s?\d[\d\s.,]*)?\s?(?:км|м(?![а-яё])|ч(?![а-яё])|час[а-яё]*|мин[а-яё]*|сом[а-яё]*|руб[а-яё]*|₽|\$|°C|%|дн[а-яё]*|ноч[а-яё]*|чел[а-яё]*|km(?![a-z])|m(?![a-z])|h(?![a-z])|hrs?(?![a-z])|hours?|min(?:utes?)?(?![a-z])|som(?![a-z])|RUB|days?|nights?|people|pers(?:ons?)?(?![a-z])))/gi;
 const LINKRX = /(https?:\/\/[^\s<)»,;]+[^\s<)».,;:])|(\+(?:7|996)[\d\s()-]{9,16}\d)/g;
 
 export function richSegments(text: string, withNumbers = true): RichSeg[] {

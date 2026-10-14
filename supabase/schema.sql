@@ -24,11 +24,13 @@ create policy "anon can insert reports" on public.reports for insert to anon
 -- ---------- отзывы с модерацией ----------
 create table if not exists public.reviews (
   id          uuid primary key default gen_random_uuid(),
+  client_id   text unique,                        -- id с телефона: повторная отправка не создаёт дубль
   place_id    text not null,
   rating      smallint not null check (rating between 1 and 5),
   text        text not null check (char_length(text) between 10 and 3000),
   author      text check (char_length(author) <= 60),
   visited_at  date,
+  lang        text check (char_length(lang) <= 5),
   photos      text[] not null default '{}',      -- ссылки на фото в Storage (бакет review-photos)
   status      text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   created_at  timestamptz not null default now()

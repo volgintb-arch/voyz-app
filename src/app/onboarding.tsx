@@ -26,7 +26,7 @@ const COUNTRIES: { c: CountryCode; title: string; sub: string; cover?: Place }[]
     c: 'alt',
     title: 'Россия · Алтай',
     sub: 'Чуйский тракт, Телецкое',
-    cover: placesOf('alt').find((p) => /Телецк/.test(p.name) && p.photos.length) ?? withPhoto(placesOf('alt')),
+    cover: placesOf('alt').find((p) => /Телецк|Teletsk/.test(p.name) && p.photos.length) ?? withPhoto(placesOf('alt')),
   },
 ];
 

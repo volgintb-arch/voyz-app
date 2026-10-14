@@ -10,7 +10,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { Icon } from '@/components/icon';
-import { audioSeconds, audioSource } from '@/data/places';
+import { audioSeconds, audioSource, isTranslated } from '@/data/places';
 import { track } from '@/services/analytics';
 import { mmss } from '@/lib/text';
 import { color } from '@/theme/tokens';
@@ -36,9 +36,11 @@ interface Props {
 export const AudioGuideBar = forwardRef<AudioGuideRef, Props>(function AudioGuideBar({ placeId, title, text }, ref) {
   const source = audioSource(placeId);
   const onPlay = () => track('audio_play', { place_id: placeId });
-  if (source != null) return <Recorded ref={ref} source={source} total={audioSeconds(placeId)} title={title} onPlay={onPlay} />;
+  // английский интерфейс и переведённый текст — читаем гида по-английски синтезом речи (запись есть только русская)
+  const en = isTranslated(placeId);
+  if (source != null && !en) return <Recorded ref={ref} source={source} total={audioSeconds(placeId)} title={title} onPlay={onPlay} />;
   if (!text) return null;
-  return <Spoken ref={ref} text={text} onPlay={onPlay} />;
+  return <Spoken ref={ref} text={text} onPlay={onPlay} language={en ? 'en-US' : 'ru-RU'} />;
 });
 
 const Recorded = forwardRef<AudioGuideRef, { source: number; total?: number; title: string; onPlay: () => void }>(function Recorded({ source, total, title, onPlay }, ref) {
@@ -101,7 +103,7 @@ const Recorded = forwardRef<AudioGuideRef, { source: number; total?: number; tit
   );
 });
 
-const Spoken = forwardRef<AudioGuideRef, { text: string; onPlay: () => void }>(function Spoken({ text, onPlay }, ref) {
+const Spoken = forwardRef<AudioGuideRef, { text: string; onPlay: () => void; language: string }>(function Spoken({ text, onPlay, language }, ref) {
   const [playing, setPlaying] = useState(false);
   const est = Math.round(text.split(/\s+/).length / 2.3);
   const toggle = () => {
@@ -112,12 +114,12 @@ const Spoken = forwardRef<AudioGuideRef, { text: string; onPlay: () => void }>(f
     }
     setPlaying(true);
     onPlay();
-    Speech.speak(text, { language: 'ru-RU', onDone: () => setPlaying(false), onStopped: () => setPlaying(false), onError: () => setPlaying(false) });
+    Speech.speak(text, { language, onDone: () => setPlaying(false), onStopped: () => setPlaying(false), onError: () => setPlaying(false) });
   };
   useImperativeHandle(ref, () => ({ play: () => !playing && toggle() }));
   useEffect(() => () => void Speech.stop(), []);
   const gesture = Gesture.Tap().onEnd(() => runOnJS(toggle)());
-  return <Bar gesture={gesture} playing={playing} progress={0} label={playing ? tr('VOYZ-гид рассказывает') : tr('Послушать VOYZ-гид')} time={mmss(est)} a11y="Послушать VOYZ-гид" />;
+  return <Bar gesture={gesture} playing={playing} progress={0} label={playing ? tr('VOYZ-гид рассказывает') : tr('Послушать VOYZ-гид')} time={mmss(est)} a11y={tr('Послушать VOYZ-гид')} />;
 });
 
 function Bar({ gesture, playing, progress, label, time, onWidth, a11y }: { gesture: ReturnType<typeof Gesture.Tap> | ReturnType<typeof Gesture.Exclusive>; playing: boolean; progress: number; label: string; time: string; onWidth?: (w: number) => void; a11y: string }) {

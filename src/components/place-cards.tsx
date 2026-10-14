@@ -1,7 +1,7 @@
 // Карточки мест: большая (.bigcard 250×330), строка (.rowcard с кольцом индекса), мини (.mini 3:4 для сетки).
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
@@ -11,11 +11,17 @@ import { catLabel, locLabel, photoSource } from '@/data/places';
 import { dataLabel, whenLabel } from '@/i18n';
 import type { Place } from '@/data/types';
 import { catIcon } from '@/lib/icon-rules';
+import { measureWin, setFlight } from '@/lib/photo-flight';
 import { color, radius, type } from '@/theme/tokens';
 
-function Cover({ place, big, style }: { place: Place; big?: boolean; style: object }) {
+function Cover({ place, big, style, ref }: { place: Place; big?: boolean; style: object; ref?: RefObject<View | null> }) {
   const src = photoSource(place, 0, big);
-  if (src) return <Image source={src} style={style} contentFit="cover" transition={150} accessibilityIgnoresInvertColors />;
+  if (src)
+    return (
+      <View ref={ref} style={style} collapsable={false}>
+        <Image source={src} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} accessibilityIgnoresInvertColors />
+      </View>
+    );
   // фото нет — не выдумываем: нейтральная плашка с иконкой категории
   return (
     <View style={[style, styles.noPhoto]}>
@@ -26,13 +32,21 @@ function Cover({ place, big, style }: { place: Place; big?: boolean; style: obje
 
 // Link asChild передаёт стиль через Slot: он принимает только плоский объект (не функцию и не массив),
 // поэтому нажатие — через состояние, а стиль — через StyleSheet.flatten
-function PlaceLink({ place, children, style }: { place: Place; children: ReactNode; style: object }) {
+// photo — ссылка на фото карточки: при нажатии запоминаем его место на экране, и оно «летит» в hero
+function PlaceLink({ place, children, style, photo, radius: r }: { place: Place; children: ReactNode; style: object; photo: RefObject<View | null>; radius: number }) {
   const [pressed, setPressed] = useState(false);
+  const measure = () =>
+    measureWin(photo.current, (x, y, w, h) => {
+      if (w) setFlight(place.id, { x, y, w, h, r });
+    });
   return (
     <Link href={{ pathname: '/place/[id]', params: { id: place.id } }} asChild>
       <Pressable
         style={StyleSheet.flatten([style, pressed && { transform: [{ scale: 0.98 }] }])}
-        onPressIn={() => setPressed(true)}
+        onPressIn={() => {
+          setPressed(true);
+          measure();
+        }}
         onPressOut={() => setPressed(false)}
         accessibilityRole="button"
         accessibilityLabel={place.name}>
@@ -43,9 +57,10 @@ function PlaceLink({ place, children, style }: { place: Place; children: ReactNo
 }
 
 export function BigPlaceCard({ place }: { place: Place }) {
+  const photo = useRef<View>(null);
   return (
-    <PlaceLink place={place} style={styles.big}>
-      <Cover place={place} big style={StyleSheet.absoluteFill} />
+    <PlaceLink place={place} style={styles.big} photo={photo} radius={radius.card}>
+      <Cover ref={photo} place={place} big style={StyleSheet.absoluteFill} />
       <PhotoShade from={0.35} />
       <View style={styles.bigTop}>
         {place.rating ? (
@@ -79,9 +94,10 @@ export function BigPlaceCard({ place }: { place: Place }) {
 }
 
 export function RowPlaceCard({ place, sub, right }: { place: Place; sub?: string; right?: ReactNode }) {
+  const photo = useRef<View>(null);
   return (
-    <PlaceLink place={place} style={styles.row}>
-      <Cover place={place} style={styles.thumb} />
+    <PlaceLink place={place} style={styles.row} photo={photo} radius={14}>
+      <Cover ref={photo} place={place} style={styles.thumb} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.rowTitle} numberOfLines={2}>
           {place.name}
@@ -99,9 +115,10 @@ export function RowPlaceCard({ place, sub, right }: { place: Place; sub?: string
 }
 
 export function MiniPlaceCard({ place }: { place: Place }) {
+  const photo = useRef<View>(null);
   return (
-    <PlaceLink place={place} style={styles.mini}>
-      <Cover place={place} style={StyleSheet.absoluteFill} />
+    <PlaceLink place={place} style={styles.mini} photo={photo} radius={20}>
+      <Cover ref={photo} place={place} style={StyleSheet.absoluteFill} />
       <PhotoShade from={0.4} to="rgba(0,0,0,.8)" />
       <HeartButton id={place.id} size={20} style={styles.heartMini} />
       <View style={styles.miniBody}>
