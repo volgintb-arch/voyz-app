@@ -3,18 +3,20 @@
 import maplibregl, { type GeoJSONSource, type LayerSpecification, type Map as MlMap, type Marker as MlMarker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { Asset } from 'expo-asset';
 import { createPortal } from 'react-dom';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { COUNTRY_VIEW, HILLSHADE_PAINT, OVERLAY_LAYERS, OVERLAY_SOURCE, baseStyle, boundsOf, overlayData } from '@/geo/map-style';
 import { ONLINE } from '@/geo/online';
+import { RELIEF_COORDS, RELIEF_IMAGES } from '@/geo/relief.generated';
 
 import type { MapCamera, VoyzMapProps, VoyzMapRef } from './types';
 
 const ll2 = ([la, lo]: [number, number]): [number, number] => [lo, la];
 
 export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
-  { country, lines = [], points = [], fit, padding, maxZoom = 12, interactive = true, mode = 'scheme', relief, terrain3d, onPointPress, onCamera, onMapPress, style },
+  { country, lines = [], points = [], fit, padding, maxZoom = 12, interactive = true, mode = 'scheme', relief = true, terrain3d, onPointPress, onCamera, onMapPress, style },
   ref,
 ) {
   const box = useRef<View>(null);
@@ -52,17 +54,37 @@ export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
       minZoom: 4,
       ...(keep ? { center: keep.center, zoom: keep.zoom } : b ? { bounds: b, fitBoundsOptions: { padding: pad, maxZoom } } : { center: ll2(cv.center), zoom: cv.zoom }),
     });
-    const ro = new ResizeObserver(() => m.resize());
+    // пока человек не трогал карту, держим исходный кадр при любом изменении размера
+    let touched = false;
+    const touch = (e: { originalEvent?: unknown }) => {
+      if (e.originalEvent) touched = true;
+    };
+    m.on('dragstart', touch);
+    m.on('zoomstart', touch);
+    m.on('rotatestart', touch);
+    const ro = new ResizeObserver(() => {
+      m.resize();
+      if (b && !touched && loaded.current === m) m.fitBounds(b, { padding: pad, maxZoom, animate: false });
+    });
     ro.observe(host);
-    m.on('load', () => {
+    // style.load — сразу после разбора стиля, не ждёт первого кадра (load ждёт отрисовку тайлов)
+    const onStyle = () => {
       // при создании контейнер мог ещё не знать высоту — пересчитываем размер и кадр
       m.resize();
       if (b) m.fitBounds(b, { padding: pad, maxZoom, animate: false });
+      // встроенный рельеф (картинка в приложении) — в схеме под озёрами и дорогами, без сети
+      if (mode === 'scheme') {
+        m.addSource('relief', { type: 'image', url: Asset.fromModule(RELIEF_IMAGES[country]).uri, coordinates: RELIEF_COORDS[country] as [[number, number], [number, number], [number, number], [number, number]] });
+        m.addLayer({ id: 'relief', type: 'raster', source: 'relief', paint: { 'raster-fade-duration': 0 } }, 'lakes');
+      }
       m.addSource(OVERLAY_SOURCE, { type: 'geojson', data: overlayData([]) });
       for (const l of OVERLAY_LAYERS) m.addLayer(l as LayerSpecification);
       loaded.current = m;
       setReady((r) => r + 1);
-    });
+    };
+    // стиль-объект мог разобраться раньше подписки — тогда добавляем слои сразу
+    if (m.isStyleLoaded()) onStyle();
+    else m.once('style.load', onStyle);
     const emit = () => {
       const c = m.getCenter();
       lastCam.current = { country, center: [c.lng, c.lat], zoom: m.getZoom() };
@@ -75,6 +97,8 @@ export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
       cb.current.onMapPress?.();
     });
     map.current = m;
+    // для отладки в консоли браузера: window.__voyzMaps
+    if (__DEV__) ((globalThis as { __voyzMaps?: MlMap[] }).__voyzMaps ??= []).push(m);
     const cur = markers.current;
     return () => {
       cur.forEach(({ m: mk }) => mk.remove());
@@ -100,14 +124,15 @@ export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
   useEffect(() => {
     const m = map.current;
     if (!ready || !m || loaded.current !== m) return;
-    const need = relief || terrain3d;
+    if (m.getLayer('relief')) m.setLayoutProperty('relief', 'visibility', relief ? 'visible' : 'none');
+    const need = (relief && mode === 'detail') || terrain3d;
     if (need && !m.getSource('dem')) {
       m.addSource('dem', { type: 'raster-dem', tiles: ONLINE.terrainTiles, encoding: ONLINE.terrainEncoding, tileSize: 256, maxzoom: ONLINE.terrainMaxZoom });
       // в схеме — под озёра; в онлайн-стиле — под первый слой подписей
       const before = mode === 'scheme' ? 'lakes' : m.getStyle().layers.find((l) => l.type === 'symbol')?.id;
       m.addLayer({ id: 'hillshade', type: 'hillshade', source: 'dem', paint: HILLSHADE_PAINT } as LayerSpecification, before);
     }
-    if (m.getLayer('hillshade')) m.setLayoutProperty('hillshade', 'visibility', relief ? 'visible' : 'none');
+    if (m.getLayer('hillshade')) m.setLayoutProperty('hillshade', 'visibility', relief && mode === 'detail' ? 'visible' : 'none');
     if (terrain3d) {
       m.setTerrain({ source: 'dem', exaggeration: 1.4 });
       m.easeTo({ pitch: 58, duration: 600 });

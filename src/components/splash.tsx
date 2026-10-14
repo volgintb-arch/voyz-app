@@ -36,6 +36,12 @@ export function Splash({ onDone }: { onDone: () => void }) {
         }),
       ),
     );
+    // страховка: если анимации стоят (вкладка в фоне, медленное устройство) — убираем заставку по таймеру
+    const t = setTimeout(() => {
+      setGone(true);
+      onDone();
+    }, total + 1000);
+    return () => clearTimeout(t);
   }, [reduce, bar, out, onDone]);
 
   const wrap = useAnimatedStyle(() => ({ opacity: out.value, transform: [{ scale: 1 + (1 - out.value) * 0.04 }] }), [out]);

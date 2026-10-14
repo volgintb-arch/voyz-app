@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glass } from '@/components/glass';
@@ -26,6 +26,7 @@ import { useNavigation } from '@/geo/use-navigation';
 import { catIcon } from '@/lib/icon-rules';
 import { fmtH, fmtKm } from '@/lib/text';
 import { toast, useApp } from '@/store/app-store';
+import { useAppSize } from '@/lib/layout';
 import { color, elevation, type } from '@/theme/tokens';
 
 const CARD_W = 300;
@@ -34,7 +35,7 @@ const PAD = { top: 150, left: 30, right: 70, bottom: 230 };
 
 export default function MapTab() {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useAppSize();
   const country = useApp((s) => s.country) ?? 'kg';
   const { focus } = useLocalSearchParams<{ focus?: string }>();
   const mapRef = useRef<VoyzMapRef>(null);
@@ -44,7 +45,7 @@ export default function MapTab() {
   const [sel, setSel] = useState<string | null>(null);
   const [cam, setCam] = useState<MapCamera>({ zoom: 6, bearing: 0, pitch: 0, center: [0, 0] });
   const [mode, setMode] = useState<MapMode>('scheme');
-  const [relief, setRelief] = useState(false);
+  const [relief, setRelief] = useState(true);
   const [terrain3d, setTerrain3d] = useState(false);
   const [layers, setLayers] = useState(false);
   const [me, setMe] = useState<LatLng | null>(null);
@@ -298,7 +299,7 @@ export default function MapTab() {
           <Chip label="Тени гор" icon="mountain" on={relief} onPress={() => setRelief((r) => !r)} />
           <Chip label="3D-наклон" icon="pass" on={terrain3d} onPress={() => setTerrain3d((t) => !t)} />
         </View>
-        <Text style={styles.ln}>Рельеф и подробная карта загружаются из интернета. Без сети остаётся встроенная схема.{'\n'}{ONLINE.attribution}</Text>
+        <Text style={styles.ln}>Тени гор встроены в приложение и работают без сети. Подробная карта и 3D-наклон загружаются из интернета.{'\n'}{ONLINE.attribution}</Text>
       </Sheet>
     </View>
   );

@@ -4,7 +4,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
@@ -14,12 +14,13 @@ import { VoyzMap } from '@/components/map/voyz-map';
 import { PhotoShade } from '@/components/photo-shade';
 import { locLine, photoSource } from '@/data/places';
 import type { Place } from '@/data/types';
+import { useAppSize } from '@/lib/layout';
 import { color, type } from '@/theme/tokens';
 
 export const HERO_H = 540;
 
 export function Hero({ place, scrollY, onPhoto, onMapThumb }: { place: Place; scrollY: SharedValue<number>; onPhoto: (i: number) => void; onMapThumb: () => void }) {
-  const { width } = useWindowDimensions();
+  const { width } = useAppSize();
   const reduce = useReducedMotion();
   const [page, setPage] = useState(0);
   const photos = place.photos;

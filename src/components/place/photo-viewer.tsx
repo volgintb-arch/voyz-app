@@ -3,7 +3,7 @@
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glass } from '@/components/glass';
@@ -11,10 +11,11 @@ import { Icon } from '@/components/icon';
 import { photoSource } from '@/data/places';
 import type { Place } from '@/data/types';
 import { cut } from '@/lib/text';
+import { APP_MAX_W, useAppSize } from '@/lib/layout';
 import { color } from '@/theme/tokens';
 
 export function PhotoViewer({ place, index, onClose }: { place: Place; index: number | null; onClose: () => void }) {
-  const { width, height } = useWindowDimensions();
+  const { width, height } = useAppSize();
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(index ?? 0);
   const links = [
@@ -85,7 +86,7 @@ export function PhotoViewer({ place, index, onClose }: { place: Place; index: nu
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#000' },
+  root: { flex: 1, width: '100%', maxWidth: APP_MAX_W, alignSelf: 'center', backgroundColor: '#000' },
   capBox: { paddingHorizontal: 20, paddingVertical: 12, gap: 4 },
   cap: { fontFamily: 'Mulish_400Regular', fontSize: 13, lineHeight: 18, color: '#ddd', textAlign: 'center' },
   count: { fontFamily: 'Mulish_700Bold', fontSize: 12, color: color.mutedOnDark, textAlign: 'center' },

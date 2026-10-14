@@ -10,10 +10,12 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Splash } from '@/components/splash';
 import { ToastHost } from '@/components/toast-host';
+import { APP_MAX_W } from '@/lib/layout';
 import { color } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -37,7 +39,8 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: color.black }}>
+    <GestureHandlerRootView style={styles.outer}>
+      <View style={styles.column}>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.black } }}>
         <Stack.Screen name="(tabs)" />
@@ -47,6 +50,13 @@ export default function RootLayout() {
       </Stack>
       <ToastHost />
       {splash ? <Splash onDone={() => setSplash(false)} /> : null}
+      </View>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  outer: { flex: 1, backgroundColor: Platform.OS === 'web' ? '#0b0b0b' : color.black, alignItems: 'center' },
+  // в вебе — колонка ширины телефона по центру; на телефоне — весь экран
+  column: { flex: 1, width: '100%', maxWidth: Platform.OS === 'web' ? APP_MAX_W : undefined, backgroundColor: color.black, overflow: 'hidden' },
+});

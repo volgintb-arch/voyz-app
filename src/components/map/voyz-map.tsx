@@ -1,18 +1,19 @@
 // Карта на iOS/Android: MapLibre RN 11. Схема — офлайн-стиль из geo.json; подробная — OpenFreeMap (онлайн);
 // рельеф — отмывка по тайлам высот; линии — GeoJSON-слой; маркеры — RN-вью (фото, подписи).
-import { Camera, GeoJSONSource, Layer, Map, Marker, NativeUserLocation, RasterDEMSource, type CameraRef, type LayerProps } from '@maplibre/maplibre-react-native';
+import { Camera, GeoJSONSource, ImageSource, Layer, Map, Marker, NativeUserLocation, RasterDEMSource, type CameraRef, type LayerProps } from '@maplibre/maplibre-react-native';
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { COUNTRY_VIEW, HILLSHADE_PAINT, OVERLAY_LAYERS, OVERLAY_SOURCE, baseStyle, boundsOf, overlayData } from '@/geo/map-style';
 import { ONLINE } from '@/geo/online';
+import { RELIEF_COORDS, RELIEF_IMAGES } from '@/geo/relief.generated';
 
 import type { MapCamera, VoyzMapProps, VoyzMapRef } from './types';
 
 const ll2 = ([la, lo]: [number, number]): [number, number] => [lo, la];
 
 export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
-  { country, lines = [], points = [], fit, padding, maxZoom = 12, interactive = true, mode = 'scheme', relief, terrain3d, showUser, onPointPress, onCamera, onMapPress, style },
+  { country, lines = [], points = [], fit, padding, maxZoom = 12, interactive = true, mode = 'scheme', relief = true, terrain3d, showUser, onPointPress, onCamera, onMapPress, style },
   ref,
 ) {
   const cam = useRef<CameraRef>(null);
@@ -59,10 +60,16 @@ export const VoyzMap = forwardRef<VoyzMapRef, VoyzMapProps>(function VoyzMap(
           minZoom={4}
           initialViewState={initBounds ? { bounds: initBounds, padding } : { center: ll2(cv.center), zoom: cv.zoom }}
         />
-        {relief ? (
+        {relief && mode === 'scheme' ? (
+          // встроенный рельеф — картинка внутри приложения, работает без сети
+          <ImageSource id="relief" url={RELIEF_IMAGES[country]} coordinates={RELIEF_COORDS[country] as [[number, number], [number, number], [number, number], [number, number]]}>
+            <Layer id="relief" type="raster" beforeId="lakes" paint={{ 'raster-fade-duration': 0 }} />
+          </ImageSource>
+        ) : null}
+        {(relief && mode === 'detail') || terrain3d ? (
           <RasterDEMSource id="dem" tiles={ONLINE.terrainTiles} encoding={ONLINE.terrainEncoding} tileSize={256} maxzoom={ONLINE.terrainMaxZoom}>
             {/* в схеме отмывка ложится под озёра и дороги; в онлайн-стиле id слоёв чужие — кладём поверх с прозрачностью */}
-            <Layer id="hillshade" type="hillshade" beforeId={mode === 'scheme' ? 'lakes' : undefined} paint={HILLSHADE_PAINT} />
+            <Layer id="hillshade" type="hillshade" paint={HILLSHADE_PAINT} />
           </RasterDEMSource>
         ) : null}
         <GeoJSONSource id={OVERLAY_SOURCE} data={data}>

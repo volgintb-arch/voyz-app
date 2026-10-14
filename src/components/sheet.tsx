@@ -6,6 +6,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import Animated, { runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { APP_MAX_W } from '@/lib/layout';
 import { color, motion, type } from '@/theme/tokens';
 
 interface Props {
@@ -84,6 +85,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
+    marginHorizontal: 'auto',
+    maxWidth: APP_MAX_W,
     bottom: 0,
     backgroundColor: color.paper,
     borderTopLeftRadius: 30,
