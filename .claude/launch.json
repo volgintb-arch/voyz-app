@@ -1,0 +1,21 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "voyz-web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "tools/start-web.cjs"
+      ],
+      "port": 8081
+    },
+    {
+      "name": "voyz-prototype",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "tools/serve-prototype.mjs"
+      ],
+      "port": 8080
+    }
+  ]
+}

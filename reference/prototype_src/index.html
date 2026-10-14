@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="referrer" content="no-referrer">
+<title>Voyz — путеводитель</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script>if(window.innerWidth>600)document.documentElement.classList.add('has-frame');if(/Chrome\//.test(navigator.userAgent)&&!/CriOS|EdgiOS|FxiOS/.test(navigator.userAgent))document.documentElement.classList.add('refract');</script>
+<style>/*LEAFLET*/
+/*STYLE*/</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lg-refract" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feImage result="map" preserveAspectRatio="none" width="100%" height="100%" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='100' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='r'%3E%3Cstop offset='0' stop-color='%23ff0000'/%3E%3Cstop offset='.2' stop-color='%23800000'/%3E%3Cstop offset='.8' stop-color='%23800000'/%3E%3Cstop offset='1' stop-color='%23000000'/%3E%3C/linearGradient%3E%3ClinearGradient id='g' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2300ff00'/%3E%3Cstop offset='.3' stop-color='%23008000'/%3E%3Cstop offset='.7' stop-color='%23008000'/%3E%3Cstop offset='1' stop-color='%23000000'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='200' height='100' fill='url(%23r)'/%3E%3Crect width='200' height='100' fill='url(%23g)' style='mix-blend-mode:screen'/%3E%3C/svg%3E"/><feDisplacementMap in="SourceGraphic" in2="map" scale="28" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+<div class="stage">
+  <aside class="aside">
+    <!--WM-->
+    <h1>Путеводитель по Кыргызстану и Алтаю</h1>
+    <p>Прототип приложения для iOS и Android. 112 проверенных мест: маршрут от города до парковки и тропы, ночлег, транспорт, сезон и важные предупреждения.</p>
+    <p>Нажимайте как на телефоне: карточки, сердечки, «+» на карте маршрута. Свайп от левого края — назад.</p>
+    <p class="small" style="color:#8a8a85">Откройте ссылку на телефоне — приложение займёт весь экран.</p>
+  </aside>
+  <div class="device"><div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar"><span class="tm">9:41</span><span class="ind"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="1" fill="currentColor" opacity=".5"/></svg></span></div>
+      <div id="app"></div>
+    </div>
+  </div>
+</div>
+<script src="lib/leaflet.js"></script>
+<script src="data/geo.js"></script>
+<script src="data/places.js"></script>
+<script src="data/audio.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
