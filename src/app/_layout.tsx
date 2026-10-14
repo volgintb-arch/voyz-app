@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { Splash } from '@/components/splash';
 import { ToastHost } from '@/components/toast-host';
 import { color } from '@/theme/tokens';
 
@@ -27,6 +28,7 @@ export default function RootLayout() {
     return () => clearTimeout(t);
   }, []);
   const ready = loaded || !!error || timedOut;
+  const [splash, setSplash] = useState(true);
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -40,9 +42,11 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.black } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
-        <Stack.Screen name="place/[id]" />
+        {/* push: слайд справа, свайп от левого края назад (iOS), системная «назад» на Android */}
+        <Stack.Screen name="place/[id]" options={{ animation: 'slide_from_right', gestureEnabled: true, animationDuration: 460 }} />
       </Stack>
       <ToastHost />
+      {splash ? <Splash onDone={() => setSplash(false)} /> : null}
     </GestureHandlerRootView>
   );
 }
