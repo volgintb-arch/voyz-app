@@ -23,7 +23,7 @@
 - **@maplibre/maplibre-react-native** — карты. Базовый слой — GeoJSON из `assets/data/geo.json`, оформленный по `tokens.color.map*`. Онлайн-тайлы — опциональный слой.
 - **zustand** + **react-native-mmkv** — состояние (страна, избранное, маршрут, очередь отметок).
 - **expo-audio** — аудиогид из локальных `assets/audio/*.mp3` (фон и экран блокировки); **expo-speech** — запасной вариант. **expo-haptics**; **expo-linking** — deep links; **expo-location** — «где я».
-- **@expo-google-fonts/mulish**, **lucide-react-native**, **react-native-svg** (логотип VOYZ — SVG-пути из `reference/prototype_src/app.js → WM`).
+- **@expo-google-fonts/mulish**, **react-native-svg** (логотип VOYZ — SVG-пути из `reference/prototype_src/app.js → WM`).
 - Сборка — **EAS Build** (profiles: development, preview, production).
 
 ## Структура проекта

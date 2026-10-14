@@ -2,12 +2,14 @@
 // «Показать приветствие снова», «Предложить место».
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/icon';
 import { VoyzLogo } from '@/components/voyz-logo';
 import { meta, placesOf, plural } from '@/data/places';
+import { WEB_URL, canSaveOffline, saveForOffline, shareLink } from '@/lib/web-app';
 import type { CountryCode } from '@/data/types';
 import { toast, useApp } from '@/store/app-store';
 import { useFilters } from '@/store/filters';
@@ -20,6 +22,19 @@ export default function MoreTab() {
   const reports = useApp((s) => s.reports.length);
   const L = placesOf(country);
   const withPhoto = L.filter((p) => p.photos.length).length;
+  const [offline, setOffline] = useState<{ done: number; total: number } | null>(null);
+
+  const saveOffline = async () => {
+    if (!canSaveOffline()) return toast('Сохранение доступно на опубликованном сайте', 'download');
+    setOffline({ done: 0, total: 1 });
+    try {
+      await saveForOffline((done, total) => setOffline({ done, total }));
+      toast('Сохранили — Voyz работает без интернета', 'download');
+    } catch {
+      toast('Не получилось сохранить — проверьте интернет', 'download');
+      setOffline(null);
+    }
+  };
 
   const pick = (c: CountryCode) => {
     if (c === country) return;
@@ -45,6 +60,25 @@ export default function MoreTab() {
           {reports ? <Row icon="flag" label="Отметки «Заметили изменения?»" right={<Text style={styles.em}>{reports} ждут отправки</Text>} /> : null}
         </View>
 
+        {Platform.OS === 'web' ? (
+          <View style={[styles.method, { marginTop: 20, backgroundColor: color.lime }]}>
+            <Text style={styles.methodB}>Voyz на телефоне — без магазина</Text>
+            <Text style={styles.methodT}>
+              iPhone: Safari → «Поделиться» → «На экран Домой». Android: Chrome → меню ⋮ → «Установить приложение». Иконка появится на главном экране, Voyz откроется на весь экран.
+            </Text>
+            <Pressable onPress={saveOffline} disabled={!!offline && offline.done < offline.total} style={styles.offBtn} accessibilityRole="button">
+              <Icon name="download" size={18} color={color.lime} />
+              <Text style={styles.offT}>
+                {!offline ? 'Сохранить для офлайна · ~45 МБ' : offline.done < offline.total ? `Сохраняем… ${Math.round((offline.done / offline.total) * 100)}%` : 'Сохранено — работает без интернета ✓'}
+              </Text>
+            </Pressable>
+            <Pressable onPress={async () => (await shareLink('Voyz', 'Voyz — путеводитель по Кыргызстану и Алтаю', WEB_URL + '/')) === 'copied' && toast('Ссылка скопирована', 'link')} style={[styles.offBtn, { backgroundColor: color.paper, marginTop: 8 }]} accessibilityRole="button">
+              <Icon name="share" size={18} />
+              <Text style={[styles.offT, { color: color.black }]}>Поделиться ссылкой на Voyz</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         <View style={[styles.method, { marginTop: 20 }]}>
           <Text style={styles.methodB}>Как мы проверяем места</Text>
           <Text style={styles.methodT}>
@@ -54,7 +88,7 @@ export default function MoreTab() {
         <View style={[styles.method, { marginTop: 12, backgroundColor: color.black }]}>
           <Text style={[styles.methodB, { color: color.lime }]}>Карта без сети</Text>
           <Text style={[styles.methodT, { color: color.paper }]}>
-            Встроенная схема (Natural Earth): основные трассы, реки, озёра и границы. Маршруты по дорогам строятся на телефоне, без интернета. Подробная карта, рельеф и маршрут «от меня» — когда есть сеть. Для грунтовок откройте точку в навигаторе — кнопки есть в каждой карточке.
+            Встроенная схема (Natural Earth): основные трассы, реки, озёра и границы. Рельеф гор и маршруты по дорогам тоже работают без интернета. Подробная карта, 3D и маршрут «от меня» — когда есть сеть. Для грунтовок откройте точку в навигаторе — кнопки есть в каждой карточке.
           </Text>
         </View>
 
@@ -101,5 +135,7 @@ const styles = StyleSheet.create({
   method: { backgroundColor: color.mist, borderRadius: 24, padding: 18 },
   methodB: { fontFamily: 'Mulish_700Bold', fontSize: 16, color: color.black, marginBottom: 6 },
   methodT: { fontFamily: 'Mulish_400Regular', fontSize: 14.5, lineHeight: 21, color: '#262624' },
+  offBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 46, borderRadius: 999, backgroundColor: color.black, marginTop: 14, paddingHorizontal: 16 },
+  offT: { fontFamily: 'Mulish_700Bold', fontSize: 14.5, color: color.lime },
   foot: { fontFamily: 'Mulish_400Regular', fontSize: 15, color: '#222', marginTop: 12 },
 });

@@ -1,10 +1,10 @@
 // Экран «Куда едем?» — выбор страны. Эталон: reference/prototype_src/app.js → onboarding().
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ArrowRight } from 'lucide-react-native';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Icon } from '@/components/icon';
 import { PhotoShade } from '@/components/photo-shade';
 import { VoyzLogo } from '@/components/voyz-logo';
 import { getPlace, photoSource, places, placesOf } from '@/data/places';
@@ -66,7 +66,7 @@ export default function Onboarding() {
               </Text>
             </View>
             <View style={styles.bubble}>
-              <ArrowRight size={22} color={color.black} strokeWidth={1.8} />
+              <Icon name="arrow" size={22} color={color.black} />
             </View>
           </View>
         </Pressable>

@@ -3,7 +3,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import Animated, { FadeIn, runOnJS, useAnimatedScrollHandler, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -33,6 +33,8 @@ import { InfoGrid, KeyFacts, MediaBlock, WhySection } from '@/components/place/t
 import { HeartButton } from '@/components/ui';
 import { audioSeconds, getPlace } from '@/data/places';
 import { cut, mmss } from '@/lib/text';
+import { placeUrl, shareLink } from '@/lib/web-app';
+import { toast } from '@/store/app-store';
 import { color, motion, radius } from '@/theme/tokens';
 
 const SECTIONS: [string, string][] = [
@@ -109,7 +111,11 @@ export default function PlaceScreen() {
     const top = anchorY(k);
     if (top != null) scroll.current?.scrollTo({ y: Math.max(0, top - 110), animated: !reduce });
   };
-  const share = () => Share.share({ title: place.name, message: `${place.name} — ${cut(place.short, 140)}\nvoyz://place/${place.id}` }).catch(() => {});
+  // ссылка на веб-версию — откроется у любого получателя, даже без установленного приложения
+  const share = async () => {
+    const r = await shareLink(place.name, `${place.name} — ${cut(place.short, 140)}`, placeUrl(place.id));
+    if (r === 'copied') toast('Ссылка скопирована', 'link');
+  };
   const secs = audioSeconds(place.id);
   const r = reader ? readers[reader] ?? null : null;
 

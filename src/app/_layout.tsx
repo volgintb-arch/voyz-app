@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Splash } from '@/components/splash';
 import { ToastHost } from '@/components/toast-host';
 import { APP_MAX_W } from '@/lib/layout';
+import { registerServiceWorker } from '@/lib/web-app';
 import { color } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -31,6 +32,8 @@ export default function RootLayout() {
   }, []);
   const ready = loaded || !!error || timedOut;
   const [splash, setSplash] = useState(true);
+  // веб: сервис-воркер — приложение открывается без сети и ставится на главный экран
+  useEffect(registerServiceWorker, []);
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
