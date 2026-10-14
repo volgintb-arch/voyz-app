@@ -38,9 +38,15 @@ export const canSaveOffline = () => Platform.OS === 'web' && !__DEV__ && typeof 
 /** Скачать в кэш все фото, аудиогиды и рельеф (~45 МБ). onProgress(сделано, всего). */
 export async function saveForOffline(onProgress: (done: number, total: number) => void): Promise<void> {
   const reg = await navigator.serviceWorker.ready;
-  const urls = [...Object.values(photoSources), ...Object.values(audioSources), ...Object.values(RELIEF_IMAGES)]
-    .map((m) => Asset.fromModule(m as number).uri)
-    .filter(Boolean);
+  const media = [...Object.values(photoSources), ...Object.values(audioSources), ...Object.values(RELIEF_IMAGES)].map((m) => Asset.fromModule(m as number).uri);
+  // сам бандл, стили и шрифты при первом визите грузятся раньше, чем включается сервис-воркер,
+  // поэтому сохраняем и всё, что страница уже скачала со своего сайта
+  const loaded = performance
+    .getEntriesByType('resource')
+    .map((e) => e.name)
+    .filter((u) => u.startsWith(location.origin + '/voyz-app/'));
+  const shell = ['/voyz-app/', '/voyz-app/manifest.webmanifest', '/voyz-app/icon-192.png', '/voyz-app/icon-512.png', '/voyz-app/favicon.ico'];
+  const urls = [...shell, ...loaded, ...media].filter(Boolean);
   await new Promise<void>((resolve) => {
     const ch = new MessageChannel();
     ch.port1.onmessage = (e: MessageEvent<{ done: number; total: number }>) => {
