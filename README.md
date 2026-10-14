@@ -15,6 +15,26 @@ npm run prototype  # веб-прототип-эталон на http://localhost:
 
 MMKV — нативный модуль: на телефоне нужен **dev client** (`npx expo run:android` или `eas build --profile development`), в Expo Go хранилище работать не будет.
 
+## Сборка для телефона (EAS)
+
+Один раз: войдите в Expo и привяжите проект (создаст `projectId` в `app.json`):
+
+```bash
+npx eas-cli login
+npx eas-cli init
+```
+
+Затем:
+
+```bash
+npm run build:dev       # dev client — для разработки на своём телефоне
+npm run build:preview   # тестовая сборка: Android APK по ссылке, iOS — internal (нужен Apple Developer)
+npm run build:prod      # релиз: Google Play (AAB) и App Store
+npm run submit:prod     # отправка: Google Play Internal testing и TestFlight
+```
+
+Статус шагов и отличия от прототипа — [docs/07_STATUS.md](docs/07_STATUS.md).
+
 ## Проверки
 
 ```bash

@@ -12,6 +12,7 @@
     "expo-audio": "~57.0.5",
     "expo-blur": "~57.0.3",
     "expo-constants": "~57.0.21",
+    "expo-dev-client": "~57.0.20",
     "expo-device": "~57.0.2",
     "expo-font": "~57.0.4",
     "expo-glass-effect": "~57.0.4",
@@ -60,7 +61,11 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "prototype": "node tools/serve-prototype.mjs",
-    "gen:media": "node tools/gen-media.mjs"
+    "gen:media": "node tools/gen-media.mjs",
+    "build:dev": "eas build --profile development --platform all",
+    "build:preview": "eas build --profile preview --platform all",
+    "build:prod": "eas build --profile production --platform all",
+    "submit:prod": "eas submit --profile production --platform all"
   },
   "private": true
 }
