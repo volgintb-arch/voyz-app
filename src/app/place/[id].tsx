@@ -57,15 +57,24 @@ export default function PlaceScreen() {
   const [viewer, setViewer] = useState<number | null>(null);
   const [reader, setReader] = useState<ReaderKey | null>(null);
   const [ui, setUi] = useState({ compact: false, light: false, on: 'ov', trust: false });
-  const anchors = useRef<Record<string, number>>({});
+  // y якоря внутри своего контейнера; отступ белого листа прибавляем при чтении —
+  // onLayout детей приходит раньше, чем у самого листа, и whiteTop в этот момент ещё 0
   const whiteTop = useRef(0);
+  const anchors = useRef<Record<string, { y: number; white: boolean }>>({});
+  const anchorY = (k: string) => {
+    const a = anchors.current[k];
+    return a ? a.y + (a.white ? whiteTop.current : 0) : undefined;
+  };
   const readers = useMemo(() => (place ? buildReaders(place) : {}), [place]);
 
   // scroll-spy и смена темы шапки — пересчёт на JS только когда что-то поменялось
   const onY = (v: number) => {
     let on = 'ov';
-    for (const [k] of SECTIONS) if (anchors.current[k] != null && anchors.current[k] - 140 <= v) on = k;
-    const next = { compact: v > HERO_H - 90, light: v > whiteTop.current - 60, on, trust: ui.trust || (anchors.current.src ?? Infinity) < v + height - 80 };
+    for (const [k] of SECTIONS) {
+      const ay = anchorY(k);
+      if (ay != null && ay - 140 <= v) on = k;
+    }
+    const next = { compact: v > HERO_H - 90, light: v > whiteTop.current - 60, on, trust: ui.trust || (anchorY('src') ?? Infinity) < v + height - 80 };
     if (next.compact !== ui.compact || next.light !== ui.light || next.on !== ui.on || next.trust !== ui.trust) {
       if (next.on !== ui.on) {
         const i = SECTIONS.findIndex(([k]) => k === next.on);
@@ -89,11 +98,15 @@ export default function PlaceScreen() {
     );
   }
 
-  const anchor = (k: string, inWhite = true) => (e: LayoutChangeEvent) => {
-    anchors.current[k] = e.nativeEvent.layout.y + (inWhite ? whiteTop.current : 0);
+  // обработчики событий layout (не создаются через вызов в рендере — так их понимает React Compiler)
+  const setAnchor = (k: string, e: LayoutChangeEvent, inWhite = true) => {
+    anchors.current = { ...anchors.current, [k]: { y: e.nativeEvent.layout.y, white: inWhite } };
+  };
+  const setWhiteTop = (e: LayoutChangeEvent) => {
+    whiteTop.current = e.nativeEvent.layout.y;
   };
   const jump = (k: string) => {
-    const top = anchors.current[k];
+    const top = anchorY(k);
     if (top != null) scroll.current?.scrollTo({ y: Math.max(0, top - 110), animated: !reduce });
   };
   const share = () => Share.share({ title: place.name, message: `${place.name} — ${cut(place.short, 140)}\nvoyz://place/${place.id}` }).catch(() => {});
@@ -108,35 +121,35 @@ export default function PlaceScreen() {
           <Hero place={place} scrollY={y} onPhoto={setViewer} onMapThumb={() => jump('route')} />
         </Animated.View>
         <InfoGrid place={place} />
-        <View onLayout={anchor('ov', false)}>
+        <View onLayout={(e) => setAnchor('ov', e, false)}>
           <WhySection place={place} onRead={() => setReader('guide')} />
         </View>
 
-        <View style={styles.white} onLayout={(e) => (whiteTop.current = e.nativeEvent.layout.y)}>
+        <View style={styles.white} onLayout={setWhiteTop}>
           <View style={{ paddingHorizontal: 20, paddingTop: 22 }}>
             <AudioGuideBar ref={audio} placeId={place.id} title={place.name} text={place.guide} />
           </View>
           <KeyFacts place={place} />
           <MediaBlock place={place} onView={setViewer} />
-          <View onLayout={anchor('route')}>
+          <View onLayout={(e) => setAnchor('route', e)}>
             <RouteSection place={place} onReadHow={() => setReader('how')} />
           </View>
           <WantCard place={place} />
           <SeasonBlock place={place} onRead={() => setReader('season')} />
           <BringBlock place={place} />
-          <View onLayout={anchor('imp')}>
+          <View onLayout={(e) => setAnchor('imp', e)}>
             <ImportantBlock place={place} onRead={() => setReader('warn')} />
           </View>
-          <View onLayout={anchor('stay')}>
+          <View onLayout={(e) => setAnchor('stay', e)}>
             <StaysBlock place={place} onRead={() => setReader('stay')} />
             <FoodBlock place={place} />
           </View>
-          <View onLayout={anchor('site')}>
+          <View onLayout={(e) => setAnchor('site', e)}>
             <HikesBlock place={place} onRead={() => setReader('hikes')} />
             <UsefulBlock readers={readers} onRead={setReader} />
           </View>
           <NearbyBlock place={place} onMap={() => router.navigate({ pathname: '/map', params: { focus: place.id } })} />
-          <View onLayout={anchor('src')}>
+          <View onLayout={(e) => setAnchor('src', e)}>
             <TrustBlock place={place} visible={ui.trust} onRead={() => setReader('src')} />
           </View>
           <ChangeReport place={place} />

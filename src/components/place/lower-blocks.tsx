@@ -29,6 +29,8 @@ export function WantCard({ place }: { place: Place }) {
   const inTrip = useApp((s) => s.trip.includes(place.id));
   const toggleTrip = useApp((s) => s.toggleTrip);
   const [tours, setTours] = useState(false);
+  const been = useApp((s) => s.visited[place.id]);
+  const toggleVisited = useApp((s) => s.toggleVisited);
   return (
     <View style={styles.want}>
       <LinearGradient colors={[color.lime, color.lime, '#F5FFC8']} locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.wantHd}>
@@ -45,6 +47,18 @@ export function WantCard({ place }: { place: Place }) {
             const added = toggleTrip(place.id);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             toast(added ? 'Добавили в маршрут' : 'Убрали из маршрута', 'route');
+          }}
+        />
+      </View>
+      <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
+        <Button
+          label={been ? `Вы были здесь · ${new Date(been).toLocaleDateString('ru-RU')}` : 'Я здесь был'}
+          icon={been ? 'check' : 'flag'}
+          tone={been ? 'black' : 'outline'}
+          onPress={() => {
+            const on = toggleVisited(place.id);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            toast(on ? 'Отметили на вашей карте путешествий' : 'Отметку сняли', 'flag');
           }}
         />
       </View>

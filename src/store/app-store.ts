@@ -18,12 +18,15 @@ interface AppState {
   saved: string[];
   /** Маршрут — упорядоченный список мест; дни считаются автоматически (см. src/geo/trip.ts). */
   trip: string[];
+  /** «Я здесь был»: id места → дата отметки (ISO). Из этого собирается карта путешествий. */
+  visited: Record<string, string>;
   /** Очередь отметок «Заметили изменения?» — уйдёт на сервер, когда появится бэкенд и сеть. */
   reports: { id: string; tags: string[]; at: string }[];
   setCountry: (c: CountryCode | null) => void;
   toggleSaved: (id: string) => boolean; // true — добавили
   toggleTrip: (id: string) => boolean; // true — добавили
   setTrip: (ids: string[]) => void;
+  toggleVisited: (id: string) => boolean; // true — отметили
   addReport: (id: string, tags: string[]) => void;
 }
 
@@ -33,6 +36,7 @@ export const useApp = create<AppState>()(
       country: null,
       saved: [],
       trip: [],
+      visited: {},
       reports: [],
       setCountry: (country) => set({ country }),
       toggleSaved: (id) => {
@@ -51,17 +55,26 @@ export const useApp = create<AppState>()(
         return true;
       },
       setTrip: (trip) => set({ trip }),
+      toggleVisited: (id) => {
+        const v = { ...get().visited };
+        const had = id in v;
+        if (had) delete v[id];
+        else v[id] = new Date().toISOString();
+        set({ visited: v });
+        return !had;
+      },
       addReport: (id, tags) => set({ reports: [...get().reports, { id, tags, at: new Date().toISOString() }] }),
     }),
     {
       name: 'voyz-app',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => mmkvStorage),
-      partialize: ({ country, saved, trip, reports }) => ({ country, saved, trip, reports }),
+      partialize: ({ country, saved, trip, visited, reports }) => ({ country, saved, trip, visited, reports }),
       // v1 хранил маршрут по дням (string[][]) — разворачиваем в плоский список
       migrate: (state, version) => {
         const s = state as Partial<AppState> & { trip?: unknown };
         if (version < 2 && Array.isArray(s.trip)) s.trip = (s.trip as unknown[]).flat().filter((x): x is string => typeof x === 'string');
+        if (version < 3 && !s.visited) s.visited = {};
         return s as AppState;
       },
     },

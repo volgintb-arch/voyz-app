@@ -67,7 +67,8 @@
         {
           "locationWhenInUsePermission": "Voyz показывает, где вы на карте, и строит маршрут до места."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

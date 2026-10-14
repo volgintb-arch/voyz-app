@@ -11,6 +11,7 @@ import type { MapPoint } from '@/components/map/types';
 import { useDrawProgress } from '@/components/map/use-draw';
 import { VoyzMap } from '@/components/map/voyz-map';
 import { RowPlaceCard } from '@/components/place-cards';
+import { PassportPane } from '@/components/passport/passport-pane';
 import { StopRow } from '@/components/trip/stop-row';
 import { Button, Chip, IconBubble } from '@/components/ui';
 import { getPlace, meta, plural } from '@/data/places';
@@ -28,7 +29,8 @@ export default function TripTab() {
   const country = useApp((s) => s.country) ?? 'kg';
   const trip = useApp((s) => s.trip);
   const saved = useApp((s) => s.saved);
-  const [tab, setTab] = useState<'route' | 'saved'>('route');
+  const [tab, setTab] = useState<'route' | 'saved' | 'been'>('route');
+  const beenN = useApp((s) => Object.keys(s.visited).length);
   const plan = useMemo(() => planTrip(trip, country), [trip, country]);
   const savedHere = saved.map(getPlace).filter((p): p is Place => !!p && p.c === country);
 
@@ -41,11 +43,12 @@ export default function TripTab() {
         <Text style={styles.sub}>{meta.countries[country].name} · соберите поездку из сохранённых мест</Text>
       </View>
       <View style={styles.sheet}>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 18 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
           <Chip label={`Маршрут${plan.places.length ? ` ${plan.places.length}` : ''}`} icon="route" on={tab === 'route'} onPress={() => setTab('route')} />
           <Chip label={`Избранное${savedHere.length ? ` ${savedHere.length}` : ''}`} icon="heart" on={tab === 'saved'} onPress={() => setTab('saved')} />
+          <Chip label={`Был${beenN ? ` ${beenN}` : ''}`} icon="flag" on={tab === 'been'} onPress={() => setTab('been')} />
         </View>
-        {tab === 'route' ? <RoutePane plan={plan} /> : <SavedPane places={savedHere} />}
+        {tab === 'route' ? <RoutePane plan={plan} /> : tab === 'saved' ? <SavedPane places={savedHere} /> : <PassportPane />}
       </View>
     </ScrollView>
   );

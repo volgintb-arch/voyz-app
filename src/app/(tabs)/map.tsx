@@ -48,6 +48,7 @@ export default function MapTab() {
   const [terrain3d, setTerrain3d] = useState(false);
   const [layers, setLayers] = useState(false);
   const [me, setMe] = useState<LatLng | null>(null);
+  const visited = useApp((s) => s.visited);
 
   const selPlace = sel ? getPlace(sel) : undefined;
   const nav = useNavigation(selPlace?.ll ?? null);
@@ -141,7 +142,7 @@ export default function MapTab() {
     points.push(
       it.kind === 'cluster'
         ? { id: it.id, ll: it.ll, z: 3, render: () => <ClusterMarker cover={it.cover} count={it.count} /> }
-        : { id: it.id, ll: it.ll, z: it.id === sel ? 10 : 2, render: () => (navOn && it.id === sel ? <FinishMark /> : <PhotoMarker place={it.place} selected={it.id === sel} />) },
+        : { id: it.id, ll: it.ll, z: it.id === sel ? 10 : 2, render: () => (navOn && it.id === sel ? <FinishMark /> : <PhotoMarker place={it.place} selected={it.id === sel} visited={it.id in visited} />) },
     );
   const pos = ns.phase === 'driving' || ns.phase === 'preview' ? ns.pos : me;
   if (pos && Platform.OS === 'web') points.push({ id: 'me', ll: pos, z: 20, pressable: false, render: () => <MeDot /> });
@@ -305,35 +306,38 @@ export default function MapTab() {
 
 const TURN_ICON: Record<string, IconName> = { left: 'back', right: 'arrow', straight: 'up', uturn: 'down', arrive: 'flag', depart: 'up', round: 'shuffle' };
 
+// карточка и кнопка маршрута — соседи, а не вложенные кнопки (в вебе <button> внутри <button> недопустим)
 function PeekCard({ place: p, on, onPress, onRoute, loading }: { place: Place; on: boolean; onPress: () => void; onRoute: () => void; loading: boolean }) {
   const src = photoSource(p);
   return (
-    <Pressable onPress={onPress} style={[styles.card, elevation.floating, on && { borderColor: color.black }]} accessibilityRole="button" accessibilityLabel={on ? `Открыть: ${p.name}` : p.name}>
-      {src ? (
-        <Image source={src} style={styles.th} contentFit="cover" />
-      ) : (
-        <View style={[styles.th, { backgroundColor: '#E4EBDA', alignItems: 'center', justifyContent: 'center' }]}>
-          <Icon name={catIcon(p.cat)} size={22} color="#9aa08f" />
+    <View style={[styles.card, elevation.floating, on && { borderColor: color.black }]}>
+      <Pressable onPress={onPress} style={styles.cardMain} accessibilityRole="button" accessibilityLabel={on ? `Открыть: ${p.name}` : p.name}>
+        {src ? (
+          <Image source={src} style={styles.th} contentFit="cover" />
+        ) : (
+          <View style={[styles.th, { backgroundColor: '#E4EBDA', alignItems: 'center', justifyContent: 'center' }]}>
+            <Icon name={catIcon(p.cat)} size={22} color="#9aa08f" />
+          </View>
+        )}
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {p.name}
+          </Text>
+          <Text style={styles.cardSub} numberOfLines={1}>
+            {p.cat} · {p.s.acc}
+          </Text>
         </View>
-      )}
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {p.name}
-        </Text>
-        <Text style={styles.cardSub} numberOfLines={1}>
-          {p.cat} · {p.s.acc}
-        </Text>
-      </View>
+      </Pressable>
       {on ? (
         <Pressable onPress={onRoute} style={[styles.go, { width: 44, height: 44, borderRadius: 22 }]} accessibilityRole="button" accessibilityLabel="Маршрут от меня">
           <Icon name={loading ? 'dot' : 'route'} size={20} strokeWidth={2} />
         </Pressable>
       ) : (
-        <View style={styles.go}>
+        <Pressable onPress={onPress} style={styles.go} accessibilityLabel={p.name}>
           <Icon name="arrow" size={14} strokeWidth={2.2} />
-        </View>
+        </Pressable>
       )}
-    </Pressable>
+    </View>
   );
 }
 
@@ -379,6 +383,7 @@ const styles = StyleSheet.create({
   ctlBtn: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   rail: { position: 'absolute', left: 0, right: 0, flexGrow: 0 },
   card: { width: CARD_W, height: 84, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: color.paper, borderRadius: 22, padding: 10, borderWidth: 2, borderColor: 'transparent' },
+  cardMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0 },
   th: { width: 62, height: 62, borderRadius: 14, overflow: 'hidden' },
   cardTitle: { fontFamily: 'Mulish_700Bold', fontSize: 14.5, lineHeight: 18, color: color.black },
   cardSub: { ...type.caption, fontSize: 12, color: color.muted, marginTop: 2 },
