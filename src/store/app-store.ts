@@ -3,6 +3,7 @@ import { createMMKV } from 'react-native-mmkv';
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
+import type { IconName } from '@/components/icon';
 import type { CountryCode } from '@/data/types';
 
 const mmkv = createMMKV({ id: 'voyz' });
@@ -12,19 +13,18 @@ const mmkvStorage: StateStorage = {
   removeItem: (k) => void mmkv.remove(k),
 };
 
-/** День маршрута — упорядоченный список id мест. */
-export type TripDay = string[];
-
 interface AppState {
   country: CountryCode | null; // null — ещё не выбрана, показываем онбординг
   saved: string[];
-  trip: TripDay[];
-  setCountry: (c: CountryCode) => void;
+  /** Маршрут — упорядоченный список мест; дни считаются автоматически (см. src/geo/trip.ts). */
+  trip: string[];
+  /** Очередь отметок «Заметили изменения?» — уйдёт на сервер, когда появится бэкенд и сеть. */
+  reports: { id: string; tags: string[]; at: string }[];
+  setCountry: (c: CountryCode | null) => void;
   toggleSaved: (id: string) => boolean; // true — добавили
-  addToTrip: (id: string, day?: number) => void;
-  removeFromTrip: (id: string) => void;
-  moveInTrip: (from: { day: number; i: number }, to: { day: number; i: number }) => void;
-  addDay: () => void;
+  toggleTrip: (id: string) => boolean; // true — добавили
+  setTrip: (ids: string[]) => void;
+  addReport: (id: string, tags: string[]) => void;
 }
 
 export const useApp = create<AppState>()(
@@ -32,36 +32,56 @@ export const useApp = create<AppState>()(
     (set, get) => ({
       country: null,
       saved: [],
-      trip: [[]],
+      trip: [],
+      reports: [],
       setCountry: (country) => set({ country }),
       toggleSaved: (id) => {
         const has = get().saved.includes(id);
         set({ saved: has ? get().saved.filter((x) => x !== id) : [...get().saved, id] });
         return !has;
       },
-      addToTrip: (id, day) =>
-        set(({ trip }) => {
-          if (trip.some((d) => d.includes(id))) return {};
-          const target = day ?? trip.length - 1;
-          return { trip: trip.map((d, i) => (i === target ? [...d, id] : d)) };
-        }),
-      removeFromTrip: (id) => set(({ trip }) => ({ trip: trip.map((d) => d.filter((x) => x !== id)) })),
-      moveInTrip: (from, to) =>
-        set(({ trip }) => {
-          const next = trip.map((d) => [...d]);
-          const [id] = next[from.day].splice(from.i, 1);
-          if (id) next[to.day].splice(to.i, 0, id);
-          return { trip: next };
-        }),
-      addDay: () => set(({ trip }) => ({ trip: [...trip, []] })),
+      toggleTrip: (id) => {
+        const { trip, saved } = get();
+        if (trip.includes(id)) {
+          set({ trip: trip.filter((x) => x !== id) });
+          return false;
+        }
+        // как в прототипе: место в маршруте попадает и в избранное
+        set({ trip: [...trip, id], saved: saved.includes(id) ? saved : [...saved, id] });
+        return true;
+      },
+      setTrip: (trip) => set({ trip }),
+      addReport: (id, tags) => set({ reports: [...get().reports, { id, tags, at: new Date().toISOString() }] }),
     }),
     {
       name: 'voyz-app',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => mmkvStorage),
-      partialize: ({ country, saved, trip }) => ({ country, saved, trip }),
+      partialize: ({ country, saved, trip, reports }) => ({ country, saved, trip, reports }),
+      // v1 хранил маршрут по дням (string[][]) — разворачиваем в плоский список
+      migrate: (state, version) => {
+        const s = state as Partial<AppState> & { trip?: unknown };
+        if (version < 2 && Array.isArray(s.trip)) s.trip = (s.trip as unknown[]).flat().filter((x): x is string => typeof x === 'string');
+        return s as AppState;
+      },
     },
   ),
 );
 
-export const inTrip = (trip: TripDay[], id: string) => trip.some((d) => d.includes(id));
+// ---------- тосты ----------
+
+interface ToastState {
+  msg: string | null;
+  icon: IconName;
+  key: number;
+  show: (msg: string, icon?: IconName) => void;
+}
+
+export const useToast = create<ToastState>()((set) => ({
+  msg: null,
+  icon: 'check',
+  key: 0,
+  show: (msg, icon = 'check') => set((s) => ({ msg, icon, key: s.key + 1 })),
+}));
+
+export const toast = (msg: string, icon?: IconName) => useToast.getState().show(msg, icon);

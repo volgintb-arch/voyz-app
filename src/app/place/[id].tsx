@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AudioGuideBar } from '@/components/audio-guide-bar';
 import { PhotoShade } from '@/components/photo-shade';
 import { getPlace, locLine, photoSource } from '@/data/places';
-import { inTrip, useApp } from '@/store/app-store';
+import { useApp } from '@/store/app-store';
 import { color, radius, spacing, type } from '@/theme/tokens';
 
 export default function PlaceScreen() {
@@ -18,9 +18,9 @@ export default function PlaceScreen() {
   const place = getPlace(id);
   const insets = useSafeAreaInsets();
   const saved = useApp((s) => s.saved.includes(id));
-  const added = useApp((s) => inTrip(s.trip, id));
+  const added = useApp((s) => s.trip.includes(id));
   const toggleSaved = useApp((s) => s.toggleSaved);
-  const addToTrip = useApp((s) => s.addToTrip);
+  const addToTrip = useApp((s) => s.toggleTrip);
 
   if (!place) {
     return (

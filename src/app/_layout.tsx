@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { ToastHost } from '@/components/toast-host';
 import { color } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -33,6 +34,7 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="place/[id]" />
       </Stack>
+      <ToastHost />
     </GestureHandlerRootView>
   );
 }

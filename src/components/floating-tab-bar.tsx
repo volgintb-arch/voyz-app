@@ -21,7 +21,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
   const insets = useSafeAreaInsets();
   const reduce = useReducedMotion();
   const [width, setWidth] = useState(0);
-  const tripCount = useApp((s) => s.trip.reduce((n, d) => n + d.length, 0));
+  const tripCount = useApp((s) => s.trip.length);
   const tabW = (width - BAR_PAD * 2) / state.routes.length;
 
   const indicator = useAnimatedStyle(() => ({
