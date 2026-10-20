@@ -70,7 +70,10 @@
     "build:dev": "eas build --profile development --platform all",
     "build:preview": "eas build --profile preview --platform all",
     "build:prod": "eas build --profile production --platform all",
-    "submit:prod": "eas submit --profile production --platform all"
+    "submit:prod": "eas submit --profile production --platform all",
+    "places:export": "python tools/places_xlsx.py export",
+    "places:check": "python tools/places_xlsx.py check",
+    "places:import": "python tools/places_xlsx.py import && node tools/i18n-build.mjs"
   },
   "private": true
 }
