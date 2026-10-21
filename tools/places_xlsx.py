@@ -1,19 +1,10 @@
 """
-База мест Voyz в Excel: выгрузка для менеджера и загрузка обратно в приложение.
+Схема полей базы мест Voyz, проверки и сборка places.json — общая часть для форматов Excel.
+Рабочий формат книги — «одна карточка = один лист»: tools/places_cards.py (export / check / import / roundtrip).
 
-  python tools/places_xlsx.py export [data/voyz-places.xlsx]   # places.json + переводы → Excel
-  python tools/places_xlsx.py import [data/voyz-places.xlsx]   # Excel → places.json + translations/en (+ проверки)
-  python tools/places_xlsx.py check  [data/voyz-places.xlsx]   # только проверки, ничего не пишет
-  python tools/places_xlsx.py roundtrip                        # export → import во временный файл и сравнение
+Этот модуль также умеет плоский формат (лист places + листы-списки), удобный для массовых правок и выгрузок:
+  python tools/places_xlsx.py export|check|import|roundtrip [файл.xlsx]
 
-Формат книги (для парсера):
-  • строка 1 — машинные ключи колонок (не переводить и не менять), строка 2 — подписи для людей, данные с 3-й строки;
-  • лист `places` — одна строка = одно место, ключ `id`; остальные листы ссылаются на него через `place_id`;
-  • порядок строк внутри места задаёт колонка `pos` (1, 2, 3…);
-  • списки кодов (`months`, `tags`) — через «;», списки фраз (`flags`, `gaps`) — каждая с новой строки;
-  • колонки `calc_*` и листы `README`, `summary`, `lists`, `tickets`, `tags` парсер приложения игнорирует.
-После import: `npm run gen:media` (если добавлялись фото) и `node tools/i18n-build.mjs`.
-"""
 import json
 import math
 import os
@@ -586,15 +577,25 @@ def fnum(v):
 
 
 def build(path):
-    """Читает книгу → (places, translations{id: {path: en}}, reviewed[], errors[], warnings[])."""
+    """Плоская книга (лист places + листы-списки) → см. build_tables."""
     wb = load_workbook(path, read_only=True, data_only=False)
+    tables = {}
+    for name in ['places', 'tags', 'translations_en'] + [c[0] for c in CHILD]:
+        if name in wb.sheetnames:
+            tables[name] = [dict(r, _where=f'{name}, строка {i}') for i, r in enumerate(iter_rows(wb[name]), HEAD + 1)]
+    return build_tables(tables)
+
+
+def build_tables(tables):
+    """Строки таблиц → (places, translations{id: {path: en}}, reviewed[], errors[], warnings[]).
+    tables: {'places': [...], 'photos': [...], …, 'tags': [...], 'translations_en': [...]}; у строки есть '_where' для сообщений."""
     errors, warnings = [], []
-    rows = list(iter_rows(wb['places']))
+    rows = tables.get('places', [])
     ids, out = set(), []
-    tag_ids = {r['tag_id'] for r in iter_rows(wb['tags'])} if 'tags' in wb.sheetnames else set()
+    tag_ids = {r['tag_id'] for r in tables.get('tags', []) if r.get('tag_id')}
     reviewed = []
-    for i, r in enumerate(rows, HEAD + 1):
-        where = f'places, строка {i}'
+    for r in rows:
+        where = r['_where']
         pid = s(r.get('id')).strip()
         if not re.fullmatch(r'(kg|alt)-[a-z0-9-]+', pid):
             errors.append(f'{where}: id «{pid}» — нужен формат kg-… или alt-… (латиница, цифры, дефис)')
@@ -658,15 +659,15 @@ def build(path):
     # дочерние листы
     for sheet, _, path, fields in CHILD:
         groups = {}
-        for i, r in enumerate(iter_rows(wb[sheet]), HEAD + 1):
+        for i, r in enumerate(tables.get(sheet, [])):
             pid = s(r.get('place_id'))
             if pid not in byid:
-                errors.append(f'{sheet}, строка {i}: place_id «{pid}» нет на листе places')
+                errors.append(f'{r["_where"]}: place_id «{pid}» не найден среди мест')
                 continue
             try:
                 n = intn(r.get('pos')) or 0
             except ValueError:
-                errors.append(f'{sheet}, строка {i}: pos — число')
+                errors.append(f'{r["_where"]}: pos — число')
                 n = 0
             groups.setdefault(pid, []).append((n, i, r))
         for pid, p in byid.items():
@@ -676,7 +677,7 @@ def build(path):
                     it = {k: s(r.get(k)) for k, *_ in fields}
                     it['w'], it['h'] = intn(r.get('w')) or 0, intn(r.get('h')) or 0
                     if not os.path.exists(os.path.join(ROOT, 'assets', it['f'])):
-                        warnings.append(f'photos, строка {i} ({pid}): файла assets/{it["f"]} нет')
+                        warnings.append(f'{r["_where"]} ({pid}): файла assets/{it["f"]} нет')
                 elif sheet == 'routes':
                     it = {k: s(r.get(k)) for k in ('title', 'from', 'route', 'km', 'time', 'surface', 'vehicle', 'season', 'last')}
                     it['parking'] = {'d': s(r.get('parking_d')), 'price': s(r.get('parking_price'))}
@@ -710,8 +711,8 @@ def build(path):
 
     # переводы
     tr = {}
-    if 'translations_en' in wb.sheetnames:
-        for r in iter_rows(wb['translations_en']):
+    if True:
+        for r in tables.get('translations_en', []):
             pid = s(r.get('place_id'))
             if pid in byid and s(r.get('en')).strip():
                 tr.setdefault(pid, {})[s(r.get('path'))] = s(r.get('en'))
