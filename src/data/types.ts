@@ -102,6 +102,11 @@ export interface Place {
   checked: string;
   status: string;
   photos: Photo[];
+  /** Необязательные редакционные данные карточки. */
+  content?: {
+    /** Оценка месяцев: номер месяца (1–12) → 2 «лучшее время», 1 «подходит»; месяца нет — не сезон. */
+    monthScores?: Record<string, number>;
+  };
   plinks: { cap: string; url: string; by: string }[];
   videos: { t: string; u: string; ch: string; y: string }[];
   nearby: { id: string; name: string; km: number }[];

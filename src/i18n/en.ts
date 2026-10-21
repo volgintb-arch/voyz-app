@@ -483,4 +483,8 @@ export const EN: Record<string, string> = {
   'Отзывы читает редакция: публикуем личный опыт, без рекламы, оскорблений и телефонов. Обычно — в течение пары дней.': 'Reviews are read by our editors: we publish personal experience — no ads, insults or phone numbers. Usually within a couple of days.',
   // ---------- перевод мест ----------
   'Описание переведено ИИ и ещё не проверено редактором': 'Translated by AI — not yet reviewed by an editor',
+  // ---------- оценка месяцев ----------
+  'Подходит': 'Good',
+  'Не сезон': 'Off-season',
+  'Лучшее время: {best}. Подходит: {ok}': 'Best time: {best}. Good: {ok}',
 };

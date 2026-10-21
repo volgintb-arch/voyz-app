@@ -48,6 +48,7 @@ PLACE_COLS = [
     ('see', ('see',), 'Что посмотреть', 40, False),
     ('skip', ('skip',), 'Кому не стоит', 40, False),
     ('months', None, 'Месяцы сезона (1;2;…12)', 16, True),
+    ('month_scores', None, 'Оценка месяцев (JSON: месяц → 2 лучшее, 1 подходит), напр. {"6":1,"7":2}', 30, False),
     ('s_diff', ('s', 'diff'), 'Сложность (коротко)', 14, True),
     ('s_when', ('s', 'when'), 'Когда (коротко)', 14, True),
     ('s_acc', ('s', 'acc'), 'Доступ (коротко)', 16, True),
@@ -186,6 +187,8 @@ def place_row(p, tags, en_reviewed):
     row['publish'] = p.get('publish', 'опубликовано')
     row['lat'], row['lon'] = (p['ll'] or [None, None])
     row['months'] = ';'.join(str(m) for m in p['m'])
+    ms = (p.get('content') or {}).get('monthScores')
+    row['month_scores'] = json.dumps(ms, ensure_ascii=False, separators=(',', ':')) if ms is not None else None
     r = p.get('rating') or {}
     row['rating_v'], row['rating_n'], row['rating_src'] = r.get('v'), r.get('n'), r.get('src')
     row['gaps'] = '\n'.join(p['p'].get('gaps') or [])
@@ -637,6 +640,18 @@ def build_tables(tables):
         except ValueError:
             errors.append(f'{where} ({pid}): месяцы — числа 1…12 через «;»')
             p['m'] = []
+        raw = s(r.get('month_scores')).strip()
+        if raw:
+            try:
+                ms = json.loads(raw)
+                if not isinstance(ms, dict) or any(not re.fullmatch(r'(1[0-2]|[1-9])', str(k)) or v not in (1, 2) for k, v in ms.items()):
+                    raise ValueError
+                p.setdefault('content', {})['monthScores'] = {str(k): v for k, v in ms.items()}
+                off = [int(k) for k in ms if int(k) not in p['m']]
+                if off:
+                    warnings.append(f'{where} ({pid}): в оценке есть месяцы вне сезона (months): {off}')
+            except ValueError:
+                errors.append(f'{where} ({pid}): оценка месяцев — JSON-объект вида {{"6":1,"7":2}}: месяцы 1–12, значения 1 (подходит) или 2 (лучшее время)')
         rv = r.get('rating_v')
         p['rating'] = {'v': s(rv), 'n': s(r.get('rating_n')), 'src': s(r.get('rating_src'))} if s(rv) else None
         p['p']['gaps'] = [x for x in s(r.get('gaps')).split('\n') if x.strip()]
@@ -746,6 +761,18 @@ def to_json(places):
     return res
 
 
+def write_json(path, obj, indent=1):
+    """Пишет JSON, только если данные изменились: без шума в git (отступы, дата сборки) при повторном импорте."""
+    if os.path.exists(path):
+        try:
+            if json.load(open(path, encoding='utf-8')) == obj:
+                return False
+        except ValueError:
+            pass
+    open(path, 'w', encoding='utf-8', newline='\n').write(json.dumps(obj, ensure_ascii=False, indent=indent))
+    return True
+
+
 def do_import(path, write=True):
     places, tr, reviewed, errors, warnings = build(path)
     for w in warnings[:40]:
@@ -762,16 +789,17 @@ def do_import(path, write=True):
         print(f'✓ проверка пройдена: мест {len(places)} (к публикации {len(pub)}), предупреждений {len(warnings)}')
         return True
     data = json.load(open(PLACES, encoding='utf-8'))
-    data['places'] = pub
-    data['meta']['count'] = len(pub)
-    for c in data['meta']['countries']:
-        data['meta']['countries'][c]['count'] = sum(1 for p in pub if p['c'] == c)
-    data['meta']['built'] = date.today().isoformat()
-    json.dump(data, open(PLACES, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    if data['places'] != pub:  # дату сборки и счётчики меняем, только если места правда изменились
+        data['places'] = pub
+        data['meta']['count'] = len(pub)
+        for c in data['meta']['countries']:
+            data['meta']['countries'][c]['count'] = sum(1 for p in pub if p['c'] == c)
+        data['meta']['built'] = date.today().isoformat()
+    changed = write_json(PLACES, data)
     os.makedirs(TR_EN, exist_ok=True)
-    for pid, m in tr.items():
-        json.dump(m, open(os.path.join(TR_EN, f'{pid}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    json.dump(sorted(reviewed), open(os.path.join(TR_EN, '_reviewed.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    tr_changed = sum(write_json(os.path.join(TR_EN, f'{pid}.json'), m) for pid, m in tr.items())
+    write_json(os.path.join(TR_EN, '_reviewed.json'), sorted(reviewed))
+    print(f'  places.json {"обновлён" if changed else "без изменений"} · файлов перевода изменено: {tr_changed}')
     print(f'✓ places.json: {len(pub)} мест · переводов EN: {len(tr)} · проверено редактором: {len(reviewed)}')
     print('  дальше: node tools/i18n-extract.mjs (если менялись русские тексты) · npm run gen:media · node tools/i18n-build.mjs')
     return True

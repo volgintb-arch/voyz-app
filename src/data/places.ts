@@ -84,6 +84,27 @@ export function catShort(cat: string): string {
   return 'Другое';
 }
 
+export type MonthLevel = 0 | 1 | 2; // 0 — не сезон, 1 — подходит, 2 — лучшее время
+
+/**
+ * Уровни месяцев из content.monthScores (индекс 0 = январь). null — оценок нет или они пустые/битые:
+ * тогда «Когда ехать» показывает сезон по p.m одним цветом, как раньше.
+ */
+export function monthLevels(p: Place): MonthLevel[] | null {
+  const sc = p.content?.monthScores;
+  if (!sc || typeof sc !== 'object') return null;
+  const levels: MonthLevel[] = Array(12).fill(0);
+  let any = false;
+  for (const [k, v] of Object.entries(sc)) {
+    const m = Number(k);
+    if (Number.isInteger(m) && m >= 1 && m <= 12 && (v === 1 || v === 2)) {
+      levels[m - 1] = v;
+      any = true;
+    }
+  }
+  return any ? levels : null;
+}
+
 /** Можно добраться без своей машины (есть общественный транспорт или катер). */
 export const noCar = (p: Place) =>
   ((byId.get(p.id) ?? p).p.transport || []).some((t) => /маршрут|автобус|поезд|катер|теплоход|паром|минивэн/i.test(t.mode || ''));

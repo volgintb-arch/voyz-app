@@ -13,7 +13,7 @@ import { RichText } from '@/components/rich-text';
 import { Sheet } from '@/components/sheet';
 import { Button, Chip, IconBubble, IndexRing, ReadMore, SectionHeader } from '@/components/ui';
 import { VoyzLogo } from '@/components/voyz-logo';
-import { catLabel, getPlace, placesOf } from '@/data/places';
+import { catLabel, getPlace, monthLevels, placesOf } from '@/data/places';
 import type { Place } from '@/data/types';
 import { bringIcon } from '@/lib/icon-rules';
 import { cut, findTel, findUrl, fmtKm, lead, sentences, telHref } from '@/lib/text';
@@ -28,6 +28,8 @@ import { warnText } from './readers';
 
 const MSHORT_RU = ['Я', 'Ф', 'М', 'А', 'М', 'И', 'И', 'А', 'С', 'О', 'Н', 'Д'];
 const MSHORT_EN = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+const MONTHS_FULL_RU = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+const MONTHS_FULL_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export function WantCard({ place }: { place: Place }) {
   const inTrip = useApp((s) => s.trip.includes(place.id));
@@ -105,21 +107,48 @@ function ToursSheet({ place, visible, onClose }: { place: Place; visible: boolea
   );
 }
 
+// цвет месяца по уровню: 2 — лучшее время, 1 — подходит, 0 — не сезон
+const MONTH_BG = [color.mist, color.limeMid, color.lime];
+
 export function SeasonBlock({ place, onRead }: { place: Place; onRead: () => void }) {
   const cur = new Date().getMonth() + 1;
+  // есть оценки месяцев — три уровня и легенда; нет — сезон по p.m одним цветом, без легенды
+  const levels = monthLevels(place) ?? (place.m.length ? Array.from({ length: 12 }, (_, i) => (place.m.includes(i + 1) ? 2 : 0)) : null);
+  const scored = !!monthLevels(place);
+  const names = currentLang() === 'en' ? MONTHS_FULL_EN : MONTHS_FULL_RU;
+  const a11y = scored
+    ? tr('Лучшее время: {best}. Подходит: {ok}', {
+        best: names.filter((_, i) => levels![i] === 2).join(', ') || '—',
+        ok: names.filter((_, i) => levels![i] === 1).join(', ') || '—',
+      })
+    : tr('Сезон: {month}', { month: whenLabel(place.s.when) });
   return (
     <View style={styles.sec}>
       <SectionHeader title={tr('Когда ехать')} />
-      {place.m.length ? (
-        <View style={styles.months} accessibilityLabel={tr('Сезон: {month}', { month: whenLabel(place.s.when) })}>
+      {levels ? (
+        <View style={styles.months} accessible accessibilityLabel={a11y}>
           {(currentLang() === 'en' ? MSHORT_EN : MSHORT_RU).map((m, i) => {
-            const on = place.m.includes(i + 1);
+            const lv = levels[i];
             return (
-              <View key={i} style={[styles.month, on && { backgroundColor: color.lime }, i + 1 === cur && styles.monthNow]}>
-                <Text style={[styles.monthT, on && { color: color.black }]}>{m}</Text>
+              <View key={i} style={[styles.month, { backgroundColor: MONTH_BG[lv] }, i + 1 === cur && styles.monthNow]}>
+                <Text style={[styles.monthT, lv > 0 && { color: color.black }]}>{m}</Text>
               </View>
             );
           })}
+        </View>
+      ) : null}
+      {scored ? (
+        <View style={styles.legend}>
+          {[
+            [2, tr('Лучшее время')],
+            [1, tr('Подходит')],
+            [0, tr('Не сезон')],
+          ].map(([lv, label]) => (
+            <View key={label as string} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: MONTH_BG[lv as number] }]} />
+              <Text style={styles.legendT}>{label as string}</Text>
+            </View>
+          ))}
         </View>
       ) : null}
       <RichText style={styles.lead2}>{lead(place.p.season || place.when, 1)}</RichText>
@@ -427,6 +456,10 @@ const styles = StyleSheet.create({
   month: { flex: 1, height: 34, borderRadius: 9, backgroundColor: color.mist, alignItems: 'center', justifyContent: 'center' },
   monthNow: { borderWidth: 2, borderColor: color.black },
   monthT: { fontFamily: 'Mulish_700Bold', fontSize: 10.5, color: '#999' },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: -4, marginBottom: 12 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 14, height: 14, borderRadius: 4 },
+  legendT: { ...type.caption, fontSize: 12.5, color: color.muted },
   important: { marginHorizontal: spacing.screenGutter, marginTop: spacing.sectionGap, borderRadius: 24, backgroundColor: color.olive, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
   impH: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 10 },
   impHT: { fontFamily: 'Mulish_500Medium', fontSize: 22, textTransform: 'uppercase', color: color.paper },

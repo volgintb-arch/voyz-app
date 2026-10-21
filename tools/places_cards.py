@@ -38,7 +38,7 @@ TR_TABLE = ('translations_en', 'Перевод на английский', None,
 # разделы в порядке карточки приложения: (название, поля, таблицы)
 SECTIONS = [
     ('Основное', ['id', 'country', 'publish', 'status', 'name', 'full', 'cat', 'reg', 'dist', 'lat', 'lon', 'elev', 'near', 'tags', 'top', 'rank', 'updated_at', 'updated_by'], []),
-    ('Коротко на карточке (плашки)', ['months', 's_diff', 's_when', 's_acc', 's_onsite', 's_entry', 's_net', 'rating_v', 'rating_n', 'rating_src'], []),
+    ('Коротко на карточке (плашки)', ['months', 'month_scores', 's_diff', 's_when', 's_acc', 's_onsite', 's_entry', 's_net', 'rating_v', 'rating_n', 'rating_src'], []),
     ('Обзор — тексты', ['short', 'desc', 'guide', 'see', 'skip'], []),
     ('Медиа', [], ['photos', 'videos', 'photo_links']),
     ('Дорога', ['how', 'needcar', 'self', 'roadtype', 'traveltime', 'transfer', 'p_sum'], ['routes', 'transport']),
@@ -417,6 +417,18 @@ def build(path):
     return places, tr, reviewed, errors + errs, warnings
 
 
+def write_json(path, obj, indent=1):
+    """Пишет JSON, только если данные изменились: без шума в git (отступы, дата сборки) при повторном импорте."""
+    if os.path.exists(path):
+        try:
+            if json.load(open(path, encoding='utf-8')) == obj:
+                return False
+        except ValueError:
+            pass
+    open(path, 'w', encoding='utf-8', newline='\n').write(json.dumps(obj, ensure_ascii=False, indent=indent))
+    return True
+
+
 def do_import(path, write=True):
     places, tr, reviewed, errors, warnings = build(path)
     for w in warnings[:40]:
@@ -433,16 +445,17 @@ def do_import(path, write=True):
         print(f'✓ проверка пройдена: карточек {len(places)} (к публикации {len(pub)}), предупреждений {len(warnings)}')
         return True
     data = json.load(open(X.PLACES, encoding='utf-8'))
-    data['places'] = pub
-    data['meta']['count'] = len(pub)
-    for c in data['meta']['countries']:
-        data['meta']['countries'][c]['count'] = sum(1 for p in pub if p['c'] == c)
-    data['meta']['built'] = date.today().isoformat()
-    json.dump(data, open(X.PLACES, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    if data['places'] != pub:  # дату сборки и счётчики меняем, только если места правда изменились
+        data['places'] = pub
+        data['meta']['count'] = len(pub)
+        for c in data['meta']['countries']:
+            data['meta']['countries'][c]['count'] = sum(1 for p in pub if p['c'] == c)
+        data['meta']['built'] = date.today().isoformat()
+    changed = write_json(X.PLACES, data)
     os.makedirs(X.TR_EN, exist_ok=True)
-    for pid, m in tr.items():
-        json.dump(m, open(os.path.join(X.TR_EN, f'{pid}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    json.dump(sorted(reviewed), open(os.path.join(X.TR_EN, '_reviewed.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    tr_changed = sum(write_json(os.path.join(X.TR_EN, f'{pid}.json'), m) for pid, m in tr.items())
+    write_json(os.path.join(X.TR_EN, '_reviewed.json'), sorted(reviewed))
+    print(f'  places.json {"обновлён" if changed else "без изменений"} · файлов перевода изменено: {tr_changed}')
     print(f'✓ places.json: {len(pub)} мест · переводов EN: {len(tr)} · проверено редактором: {len(reviewed)}')
     return True
 
