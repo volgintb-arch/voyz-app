@@ -4,6 +4,7 @@
 
 Этот модуль также умеет плоский формат (лист places + листы-списки), удобный для массовых правок и выгрузок:
   python tools/places_xlsx.py export|check|import|roundtrip [файл.xlsx]
+"""
 
 import json
 import math
