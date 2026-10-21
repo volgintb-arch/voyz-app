@@ -35,7 +35,8 @@ PLACE_COLS = [
     ('status', ('status',), 'Статус проверки', 18, True),
     ('name', ('name',), 'Название', 26, True),
     ('full', ('full',), 'Полное название', 30, False),
-    ('cat', ('cat',), 'Категория', 22, True),
+    ('cat', ('cat',), 'Категория (подробно, подпись)', 22, True),
+    ('cat_code', None, 'Группа категории — код из списка', 14, True),
     ('reg', ('reg',), 'Регион', 22, True),
     ('dist', ('dist',), 'Район', 20, False),
     ('lat', None, 'Широта', 10, True),
@@ -49,12 +50,11 @@ PLACE_COLS = [
     ('skip', ('skip',), 'Кому не стоит', 40, False),
     ('months', None, 'Месяцы сезона (1;2;…12)', 16, True),
     ('month_scores', None, 'Оценка месяцев (JSON: месяц → 2 лучшее, 1 подходит), напр. {"6":1,"7":2}', 30, False),
-    ('s_diff', ('s', 'diff'), 'Сложность (коротко)', 14, True),
-    ('s_when', ('s', 'when'), 'Когда (коротко)', 14, True),
-    ('s_acc', ('s', 'acc'), 'Доступ (коротко)', 16, True),
+    ('diff_code', None, 'Сложность — код 1–5 (1 очень лёгкая … 5 очень сложная)', 10, True),
+    ('acc_code', None, 'Доступ — код из списка', 14, True),
     ('s_onsite', ('s', 'onsite'), 'Время на месте (коротко)', 14, False),
     ('s_entry', ('s', 'entry'), 'Вход (коротко)', 18, False),
-    ('s_net', ('s', 'net'), 'Связь (коротко)', 16, False),
+    ('net_code', None, 'Связь на месте — код (yes / partial / no / unknown)', 12, False),
     ('diff', ('diff',), 'Сложность (подробно)', 36, False),
     ('when', ('when',), 'Когда ехать (подробно)', 36, False),
     ('hours', ('hours',), 'Часы работы', 30, False),
@@ -144,6 +144,13 @@ CHILD = [
 ]
 
 YES, NO = 'да', 'нет'
+
+# коды карточки (зеркало src/data/codes.ts): код → подпись плашки
+DIFFICULTY = {1: 'Очень лёгкая', 2: 'Лёгкая', 3: 'Средняя', 4: 'Сложная', 5: 'Очень сложная'}
+ACCESS = {'any-car': 'На любой машине', 'crossover': 'Кроссовер', '4x4': 'Нужен 4×4', 'on-foot': 'Только пешком', 'by-water': 'По воде'}
+NET = {'yes': 'Связь есть', 'partial': 'Связь местами', 'no': 'Связи нет', 'unknown': 'Не подтверждено'}
+CATEGORY = {'lakes': 'Озёра', 'waterfalls': 'Водопады', 'canyons': 'Каньоны', 'gorges': 'Ущелья', 'passes': 'Перевалы и дороги', 'valleys': 'Долины и панорамы',
+            'mountains': 'Горы и ледники', 'parks': 'Парки', 'springs': 'Источники и курорты', 'culture': 'История и культура', 'caves': 'Пещеры', 'other': 'Другое'}
 PUBLISH = ['опубликовано', 'черновик', 'скрыто']
 TICKET_TYPES = ['Новое место', 'Дозаполнить данные', 'Проверить факты', 'Уточнить координаты', 'Фото', 'Перевод EN', 'Отзыв/жалоба', 'Другое']
 TICKET_STATUS = ['открыт', 'в работе', 'на проверке', 'готово', 'отклонён']
@@ -187,6 +194,8 @@ def place_row(p, tags, en_reviewed):
     row['publish'] = p.get('publish', 'опубликовано')
     row['lat'], row['lon'] = (p['ll'] or [None, None])
     row['months'] = ';'.join(str(m) for m in p['m'])
+    c = p.get('content') or {}
+    row['diff_code'], row['acc_code'], row['net_code'], row['cat_code'] = c.get('difficulty'), c.get('access'), c.get('net'), c.get('category')
     ms = (p.get('content') or {}).get('monthScores')
     row['month_scores'] = json.dumps(ms, ensure_ascii=False, separators=(',', ':')) if ms is not None else None
     r = p.get('rating') or {}
@@ -400,8 +409,8 @@ def export(out):
     lists = wb.create_sheet('lists')
     cols = {
         'country': ['kg', 'alt'], 'publish': PUBLISH, 'status': sorted({p['status'] for p in P} | {'Нужна проверка'}),
-        'cat': sorted({p['cat'] for p in P}), 'reg': sorted({p['reg'] for p in P}), 's_acc': sorted({p['s']['acc'] for p in P}),
-        's_diff': sorted({p['s']['diff'] for p in P}), 's_when': sorted({p['s']['when'] for p in P}), 'yes_no': [YES, NO],
+        'cat': sorted({p['cat'] for p in P}), 'reg': sorted({p['reg'] for p in P}),
+        'diff_code': [str(k) for k in DIFFICULTY], 'acc_code': list(ACCESS), 'net_code': list(NET), 'cat_code': list(CATEGORY), 'yes_no': [YES, NO],
         'ticket_type': TICKET_TYPES, 'ticket_status': TICKET_STATUS, 'priority': PRIORITY,
         'license': sorted({ph['lic'] for p in P for ph in p['photos']}), 'stay_type': sorted({s['type'] for p in P for s in p['p']['stays'] if s['type']}),
     }
@@ -421,9 +430,8 @@ def export(out):
     add_list_validation(ws, L('status'), ref['status'], strict=False)
     add_list_validation(ws, L('cat'), ref['cat'], strict=False)
     add_list_validation(ws, L('reg'), ref['reg'], strict=False)
-    add_list_validation(ws, L('s_acc'), ref['s_acc'], strict=False)
-    add_list_validation(ws, L('s_diff'), ref['s_diff'], strict=False)
-    add_list_validation(ws, L('s_when'), ref['s_when'], strict=False)
+    for k in ('diff_code', 'acc_code', 'net_code', 'cat_code'):
+        add_list_validation(ws, L(k), ref[k])
     for k in ('top', 'en_reviewed'):
         add_list_validation(ws, L(k), ref['yes_no'])
     for sheet, col in (('photos', 'I'), ):
@@ -640,18 +648,43 @@ def build_tables(tables):
         except ValueError:
             errors.append(f'{where} ({pid}): месяцы — числа 1…12 через «;»')
             p['m'] = []
+        # коды → content.* и подписи плашек s.* (слова берутся из справочника, вручную их не пишут)
+        content = {}
+        dc = s(r.get('diff_code')).strip()
+        if dc not in {str(k) for k in DIFFICULTY}:
+            errors.append(f'{where} ({pid}): сложность — код 1…5')
+        else:
+            content['difficulty'] = int(dc)
+        ac = s(r.get('acc_code')).strip()
+        if ac not in ACCESS:
+            errors.append(f'{where} ({pid}): доступ — один из {list(ACCESS)}')
+        else:
+            content['access'] = ac
+        cc = s(r.get('cat_code')).strip()
+        if cc not in CATEGORY:
+            errors.append(f'{where} ({pid}): группа категории — один из {list(CATEGORY)}')
+        else:
+            content['category'] = cc
+        nc = s(r.get('net_code')).strip() or 'unknown'
+        if nc not in NET:
+            errors.append(f'{where} ({pid}): связь — один из {list(NET)}')
+            nc = 'unknown'
+        content['net'] = nc
+        p['s'] = {'diff': DIFFICULTY.get(content.get('difficulty'), ''), 'acc': ACCESS.get(content.get('access'), ''),
+                  'onsite': s(r.get('s_onsite')), 'entry': s(r.get('s_entry')), 'net': NET[nc]}
         raw = s(r.get('month_scores')).strip()
         if raw:
             try:
                 ms = json.loads(raw)
                 if not isinstance(ms, dict) or any(not re.fullmatch(r'(1[0-2]|[1-9])', str(k)) or v not in (1, 2) for k, v in ms.items()):
                     raise ValueError
-                p.setdefault('content', {})['monthScores'] = {str(k): v for k, v in ms.items()}
+                content['monthScores'] = {str(k): v for k, v in ms.items()}
                 off = [int(k) for k in ms if int(k) not in p['m']]
                 if off:
                     warnings.append(f'{where} ({pid}): в оценке есть месяцы вне сезона (months): {off}')
             except ValueError:
                 errors.append(f'{where} ({pid}): оценка месяцев — JSON-объект вида {{"6":1,"7":2}}: месяцы 1–12, значения 1 (подходит) или 2 (лучшее время)')
+        p['content'] = content
         rv = r.get('rating_v')
         p['rating'] = {'v': s(rv), 'n': s(r.get('rating_n')), 'src': s(r.get('rating_src'))} if s(rv) else None
         p['p']['gaps'] = [x for x in s(r.get('gaps')).split('\n') if x.strip()]

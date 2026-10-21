@@ -4,18 +4,19 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Sheet } from '@/components/sheet';
 import { Button, Chip } from '@/components/ui';
-import { catShort, filterPlaces, placesOf, type Filters } from '@/data/places';
+import { catGroup, filterPlaces, placesOf, type Filters } from '@/data/places';
+import { ACCESS, type AccessCode } from '@/data/codes';
 import type { CountryCode } from '@/data/types';
 import { color, spacing } from '@/theme/tokens';
 import { dataLabel, tr } from '@/i18n';
 
 const MONTHS_SHORT = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
-const DIFFS: [string, string][] = [
-  ['очень', 'Очень лёгкая'],
-  ['лёгкая', 'Лёгкая'],
-  ['средн', 'Средняя'],
-  ['сложн', 'Сложная'],
-  ['высок', 'Высокая'],
+const DIFFS: [number, string][] = [
+  [1, 'Очень лёгкая'],
+  [2, 'Лёгкая'],
+  [3, 'Средняя'],
+  [4, 'Сложная'],
+  [5, 'Очень сложная'],
 ];
 
 interface Props {
@@ -32,7 +33,7 @@ export function FilterSheet({ visible, country, value, onApply, onClose }: Props
 
   const { cats, accs } = useMemo(() => {
     const L = placesOf(country);
-    return { cats: [...new Set(L.map((p) => catShort(p.cat)))], accs: [...new Set(L.map((p) => p.s.acc).filter(Boolean))] };
+    return { cats: [...new Set(L.map((p) => catGroup(p)))], accs: [...new Set(L.map((p) => p.content?.access).filter((a): a is AccessCode => !!a && a in ACCESS))] };
   }, [country]);
 
   const count = useMemo(() => filterPlaces(country, f).length, [country, f]);
@@ -66,7 +67,7 @@ export function FilterSheet({ visible, country, value, onApply, onClose }: Props
       </Group>
       <Group title={tr('Как добраться')}>
         {accs.map((a) => (
-          <Chip key={a} small label={dataLabel(a)} on={f.acc === a} onPress={() => toggle('acc', a)} />
+          <Chip key={a} small label={dataLabel(ACCESS[a])} on={f.acc === a} onPress={() => toggle('acc', a)} />
         ))}
         <Chip small label={tr('Есть маршрутка или автобус')} on={!!f.nocar} onPress={() => toggle('nocar', true)} />
       </Group>

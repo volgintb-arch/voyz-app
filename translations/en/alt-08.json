@@ -186,5 +186,6 @@
  "p.permits": "Not needed",
  "p.access": "The roadside area is accessible to children, older people, and dogs; there are toilets",
  "p.gaps.0": "prices of the ski complex and the cafes' opening hours",
- "p.gaps.1": "exact mobile coverage"
+ "p.gaps.1": "exact mobile coverage",
+ "s.entry": "Free"
 }

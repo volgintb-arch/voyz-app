@@ -25,6 +25,8 @@ export function extract(p) {
     else if (v && typeof v === 'object') for (const k of Object.keys(v)) walk(v[k], path ? `${path}.${k}` : k, k);
   };
   for (const k of Object.keys(p)) if (!SKIP_TOP.has(k)) walk(p[k], k, k);
+  // из плашек s.* переводится только «Вход» — остальное подписи кодов (src/data/codes.ts) или длительности (durationLabel)
+  if (CYR.test(p.s?.entry ?? '')) out['s.entry'] = p.s.entry;
   return out;
 }
 

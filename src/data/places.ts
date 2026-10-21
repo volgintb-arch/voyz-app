@@ -4,7 +4,9 @@ import type { ImageSourcePropType } from 'react-native';
 
 import raw from '../../assets/data/places.json';
 import rawEn from '../../assets/data/places.en.json';
-import { currentLang, dataLabel, tr } from '@/i18n';
+import { currentLang, dataLabel, seasonText, tr } from '@/i18n';
+
+import { CATEGORY } from './codes';
 
 import { audioDuration, audioSources, photoSources } from './media.generated';
 import type { CountryCode, Place, PlacesFile } from './types';
@@ -105,6 +107,12 @@ export function monthLevels(p: Place): MonthLevel[] | null {
   return any ? levels : null;
 }
 
+/** Группа категории места: из кода content.category, иначе — по тексту категории (старые данные). */
+export const catGroup = (p: Place): string => (p.content?.category && CATEGORY[p.content.category]) || catShort(p.cat);
+
+/** Подпись сезона для плашек и карточек — строится из месяцев сезона. */
+export const seasonLabel = (p: Place) => seasonText(p.m);
+
 /** Можно добраться без своей машины (есть общественный транспорт или катер). */
 export const noCar = (p: Place) =>
   ((byId.get(p.id) ?? p).p.transport || []).some((t) => /маршрут|автобус|поезд|катер|теплоход|паром|минивэн/i.test(t.mode || ''));
@@ -122,8 +130,8 @@ export interface Filters {
   q?: string;
   cat?: string;
   month?: number;
-  acc?: string;
-  diff?: string; // начало строки в нижнем регистре: 'лёгк', 'средн', 'сложн'
+  acc?: string; // код доступа (content.access)
+  diff?: number; // код сложности 1–5 (content.difficulty)
   nocar?: boolean;
   photo?: boolean;
   season?: boolean; // «сезон сейчас»
@@ -136,10 +144,10 @@ export function filterPlaces(country: CountryCode, f: Filters, now = new Date())
     .filter(
       (p) =>
         (!q || [p.name, p.full, p.cat, p.reg, p.dist, p.near, p.short].join(' ').toLowerCase().includes(q)) &&
-        (!f.cat || catShort(p.cat) === f.cat) &&
+        (!f.cat || catGroup(p) === f.cat) &&
         (!f.month || (p.m || []).includes(f.month)) &&
-        (!f.acc || p.s.acc === f.acc) &&
-        (!f.diff || p.s.diff.toLowerCase().startsWith(f.diff)) &&
+        (!f.acc || (p.content?.access ?? p.s.acc) === f.acc) &&
+        (!f.diff || p.content?.difficulty === f.diff) &&
         (!f.nocar || noCar(p)) &&
         (!f.photo || p.photos.length > 0) &&
         (!f.season || (p.m || []).includes(curM)),

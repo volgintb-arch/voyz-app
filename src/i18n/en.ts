@@ -487,4 +487,10 @@ export const EN: Record<string, string> = {
   'Подходит': 'Good',
   'Не сезон': 'Off-season',
   'Лучшее время: {best}. Подходит: {ok}': 'Best time: {best}. Good: {ok}',
+  // ---------- коды карточки ----------
+  'Очень сложная': 'Very hard',
+  'Связь есть': 'Mobile signal',
+  'Связь местами': 'Patchy signal',
+  'Связи нет': 'No signal',
+  'Не подтверждено': 'Unconfirmed',
 };

@@ -154,5 +154,6 @@
  "p.gaps.0": "Price of the Karakol — Tup marshrutka and the Tup — San-Tash taxi",
  "p.gaps.1": "Karakol — Almaty bus schedule and whether a drop-off at the mound is possible",
  "p.gaps.2": "Guesthouses in Tup and the settlement of San-Tash",
- "p.gaps.3": "Availability of an ATM/fuel station in Tup"
+ "p.gaps.3": "Availability of an ATM/fuel station in Tup",
+ "s.entry": "Free"
 }

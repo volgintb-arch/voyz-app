@@ -7,18 +7,18 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon, type IconName } from '@/components/icon';
 import { RichText } from '@/components/rich-text';
 import { IconBubble, ReadMore, SectionHeader } from '@/components/ui';
-import { photoSource } from '@/data/places';
+import { photoSource, seasonLabel } from '@/data/places';
 import type { Place } from '@/data/types';
 import { accIcon } from '@/lib/icon-rules';
 import { cut, firstClause, lead, sentences } from '@/lib/text';
 import { color, spacing, type } from '@/theme/tokens';
-import { dataLabel, durationLabel, tr, whenLabel } from '@/i18n';
+import { dataLabel, durationLabel, tr } from '@/i18n';
 
 export function InfoGrid({ place }: { place: Place }) {
   const onsite: [IconName, string, string] = place.s.onsite ? ['timer', 'Время на месте', durationLabel(place.s.onsite)] : ['wallet', 'Вход', place.s.entry || '—'];
   const items: [IconName, string, string][] = [
     ['checks', 'Сложность', dataLabel(place.s.diff)],
-    ['cal', 'Когда', whenLabel(place.s.when)],
+    ['cal', 'Когда', seasonLabel(place)],
     [accIcon(place.s.acc), 'Доступ', dataLabel(place.s.acc)],
     onsite,
   ];

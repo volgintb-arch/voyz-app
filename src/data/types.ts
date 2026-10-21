@@ -88,7 +88,7 @@ export interface Place {
   food: string;
   reviews: string;
   m: number[]; // месяцы сезона 1..12
-  s: { diff: string; when: string; acc: string; onsite: string; entry: string; net: string };
+  s: { diff: string; acc: string; onsite: string; entry: string; net: string }; // подписи плашек; сезон строится из m (seasonLabel)
   rating: { v: string; n: string; src: string } | null;
   idx: number;
   rich: number;
@@ -106,6 +106,14 @@ export interface Place {
   content?: {
     /** Оценка месяцев: номер месяца (1–12) → 2 «лучшее время», 1 «подходит»; месяца нет — не сезон. */
     monthScores?: Record<string, number>;
+    /** Сложность 1–5 (подписи — src/data/codes.ts). */
+    difficulty?: number;
+    /** Доступ: any-car | crossover | 4x4 | on-foot | by-water. */
+    access?: string;
+    /** Группа категории: lakes, waterfalls, canyons, … (src/data/codes.ts). */
+    category?: string;
+    /** Связь на месте: yes | partial | no | unknown. */
+    net?: string;
   };
   plinks: { cap: string; url: string; by: string }[];
   videos: { t: string; u: string; ch: string; y: string }[];

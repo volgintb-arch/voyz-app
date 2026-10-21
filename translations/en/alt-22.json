@@ -143,5 +143,6 @@
  "p.access": "Suitable for everyone, including children, older people and dogs — paved road and viewpoints by the road.",
  "p.gaps.0": "Exact coordinates of the start/end points",
  "p.gaps.1": "Mobile coverage by operator on the sections",
- "p.gaps.2": "Car rental price"
+ "p.gaps.2": "Car rental price",
+ "s.entry": "Free"
 }

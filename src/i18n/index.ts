@@ -67,7 +67,10 @@ export function tWhen(lang: Lang, s: string) {
 const UNITS: [RegExp, string][] = [
   [/туда-обратно/g, 'round trip'],
   [/в одну(?: сторону)?/g, 'one way'],
+  [/весь день/g, 'full day'],
   [/полдня/g, 'half a day'],
+  [/радиально/g, 'out and back'],
+  [/^день/g, 'day'],
   [/(\d)\s?дн(?:я|ей)/g, '$1 days'],
   [/(\d)\s?день/g, '$1 day'],
   [/(\d)\s?мин/g, '$1 min'],
@@ -84,9 +87,10 @@ const UNITS: [RegExp, string][] = [
 /** Время на месте: переводим единицы, числа не трогаем. */
 export function tDuration(lang: Lang, s: string) {
   if (lang === 'ru' || !s) return s;
-  let out = s;
+  // в данных значения пишутся с заглавной («Полдня», «До 10 ч») — сравниваем без учёта регистра
+  let out = s.charAt(0).toLowerCase() + s.slice(1);
   for (const [re, en] of UNITS) out = out.replace(re, en);
-  return out;
+  return out.charAt(0).toUpperCase() + out.slice(1);
 }
 
 /** Сложность, доступ, регион, вход и прочие короткие значения — по словарю, иначе как есть. */
@@ -100,5 +104,23 @@ export const monthIn = (m0: number) => tr(MONTHS_IN_RU[m0]);
 export const pl = (n: number, one: string, few: string, many: string) => plural(currentLang(), n, one, few, many);
 export const dataLabel = (s: string) => tData(currentLang(), s);
 export const whenLabel = (s: string) => tWhen(currentLang(), s);
+
+/** Подпись сезона из номеров месяцев: «Круглый год», «Май – окт», «Ноя – апр, июл – сен». */
+export function seasonText(months: number[]) {
+  const set = new Set(months.filter((m) => m >= 1 && m <= 12));
+  if (!set.size) return '';
+  if (set.size === 12) return tr('Круглый год');
+  const names = currentLang() === 'en' ? MONTH_EN : MONTH_RU;
+  // начала отрезков — месяцы, перед которыми (по кругу) месяц не в сезоне
+  const starts = [...set].filter((m) => !set.has(((m + 10) % 12) + 1)).sort((a, b) => a - b);
+  const parts = starts.map((a) => {
+    let b = a;
+    while (set.has((b % 12) + 1)) b = (b % 12) + 1;
+    return a === b ? names[a - 1] : `${names[a - 1]} – ${names[b - 1]}`;
+  });
+  const s = parts.join(', ');
+  // как в макете: заглавная только первая буква
+  return currentLang() === 'en' ? s : s.charAt(0) + s.slice(1).toLowerCase();
+}
 export const durationLabel = (s: string) => tDuration(currentLang(), s);
 export const dateLabel = (iso: string) => new Date(iso).toLocaleDateString(currentLang() === 'en' ? 'en-GB' : 'ru-RU');

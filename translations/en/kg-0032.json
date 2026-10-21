@@ -197,5 +197,6 @@
  "p.gaps.0": "Coordinates of the parking lots at the bridges and the alpine camp",
  "p.gaps.1": "The exact current eco fee for foreigners",
  "p.gaps.2": "Contacts for the Sirota camp and the Jaysan hotel",
- "p.gaps.3": "The price of a horse per day for hauling luggage (only “$100+”)"
+ "p.gaps.3": "The price of a horse per day for hauling luggage (only “$100+”)",
+ "s.entry": "250 som per person"
 }

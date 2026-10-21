@@ -37,8 +37,8 @@ TR_TABLE = ('translations_en', 'Перевод на английский', None,
 
 # разделы в порядке карточки приложения: (название, поля, таблицы)
 SECTIONS = [
-    ('Основное', ['id', 'country', 'publish', 'status', 'name', 'full', 'cat', 'reg', 'dist', 'lat', 'lon', 'elev', 'near', 'tags', 'top', 'rank', 'updated_at', 'updated_by'], []),
-    ('Коротко на карточке (плашки)', ['months', 'month_scores', 's_diff', 's_when', 's_acc', 's_onsite', 's_entry', 's_net', 'rating_v', 'rating_n', 'rating_src'], []),
+    ('Основное', ['id', 'country', 'publish', 'status', 'name', 'full', 'cat', 'cat_code', 'reg', 'dist', 'lat', 'lon', 'elev', 'near', 'tags', 'top', 'rank', 'updated_at', 'updated_by'], []),
+    ('Коротко на карточке (плашки)', ['months', 'month_scores', 'diff_code', 'acc_code', 's_onsite', 's_entry', 'net_code', 'rating_v', 'rating_n', 'rating_src'], []),
     ('Обзор — тексты', ['short', 'desc', 'guide', 'see', 'skip'], []),
     ('Медиа', [], ['photos', 'videos', 'photo_links']),
     ('Дорога', ['how', 'needcar', 'self', 'roadtype', 'traveltime', 'transfer', 'p_sum'], ['routes', 'transport']),
@@ -73,8 +73,9 @@ WRAP = Alignment(wrap_text=True, vertical='top')
 TOP = Alignment(vertical='top')
 LONG = {'short', 'desc', 'guide', 'see', 'skip', 'how', 'warn', 'p_sum', 'p_season', 'when', 'diff', 'stay', 'food', 'reviews', 'checked', 'note', 'gaps', 'flags', 'p_access', 'p_permits'}
 YN_FIELDS = {'top', 'en_reviewed'}
-LIST_FIELDS = {'country': 'country', 'publish': 'publish', 'status': 'status', 'cat': 'cat', 'reg': 'reg', 's_acc': 's_acc', 's_diff': 's_diff', 's_when': 's_when', 'top': 'yes_no', 'en_reviewed': 'yes_no'}
-STRICT = {'country', 'publish', 'top', 'en_reviewed'}
+LIST_FIELDS = {'country': 'country', 'publish': 'publish', 'status': 'status', 'cat': 'cat', 'reg': 'reg', 'diff_code': 'diff_code', 'acc_code': 'acc_code',
+               'net_code': 'net_code', 'cat_code': 'cat_code', 'top': 'yes_no', 'en_reviewed': 'yes_no'}
+STRICT = {'country', 'publish', 'top', 'en_reviewed', 'diff_code', 'acc_code', 'net_code', 'cat_code'}
 
 
 def table_fields(name):
@@ -244,8 +245,10 @@ def write_simple(ws, keys, labels, rows, widths, required):
 def write_lists(ws, P):
     cols = {
         'country': ['kg', 'alt'], 'publish': X.PUBLISH, 'status': sorted({p['status'] for p in P} | {'Нужна проверка'}),
-        'cat': sorted({p['cat'] for p in P}), 'reg': sorted({p['reg'] for p in P}), 's_acc': sorted({p['s']['acc'] for p in P}),
-        's_diff': sorted({p['s']['diff'] for p in P}), 's_when': sorted({p['s']['when'] for p in P}), 'yes_no': [X.YES, X.NO],
+        'cat': sorted({p['cat'] for p in P}), 'reg': sorted({p['reg'] for p in P}),
+        'diff_code': [str(k) for k in X.DIFFICULTY], 'diff_label': list(X.DIFFICULTY.values()),
+        'acc_code': list(X.ACCESS), 'acc_label': list(X.ACCESS.values()), 'net_code': list(X.NET), 'net_label': list(X.NET.values()),
+        'cat_code': list(X.CATEGORY), 'cat_label': list(X.CATEGORY.values()), 'yes_no': [X.YES, X.NO],
         'ticket_type': X.TICKET_TYPES, 'ticket_status': X.TICKET_STATUS, 'priority': X.PRIORITY,
         'license': sorted({ph['lic'] for p in P for ph in p['photos']}),
     }

@@ -7,8 +7,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '@/components/icon';
 import { PhotoShade } from '@/components/photo-shade';
 import { HeartButton, IndexRing } from '@/components/ui';
-import { catLabel, locLabel, photoSource } from '@/data/places';
-import { dataLabel, whenLabel } from '@/i18n';
+import { catLabel, locLabel, photoSource, seasonLabel } from '@/data/places';
+import { dataLabel } from '@/i18n';
 import type { Place } from '@/data/types';
 import { catIcon } from '@/lib/icon-rules';
 import { measureWin, setFlight } from '@/lib/photo-flight';
@@ -82,7 +82,7 @@ export function BigPlaceCard({ place }: { place: Place }) {
           <Text style={styles.loc}>{locLabel(place)}</Text>
         </View>
         <View style={styles.chips}>
-          {[dataLabel(place.s.diff), whenLabel(place.s.when), dataLabel(place.s.acc)].filter(Boolean).map((t) => (
+          {[dataLabel(place.s.diff), seasonLabel(place), dataLabel(place.s.acc)].filter(Boolean).map((t) => (
             <Text key={t} style={styles.chip}>
               {t}
             </Text>

@@ -145,5 +145,6 @@
  "p.gaps.0": "the tract’s rating on 2GIS/Yandex",
  "p.gaps.1": "coordinates of the crossing",
  "p.gaps.2": "official status (a protected zone of the nature reserve?)",
- "p.gaps.3": "prices of horseback rides"
+ "p.gaps.3": "prices of horseback rides",
+ "s.entry": "Free (boat extra)"
 }

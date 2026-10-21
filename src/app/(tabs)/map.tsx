@@ -16,7 +16,7 @@ import type { MapCamera, MapMode, MapPoint, VoyzMapRef } from '@/components/map/
 import { VoyzMap } from '@/components/map/voyz-map';
 import { Sheet } from '@/components/sheet';
 import { Button, Chip } from '@/components/ui';
-import { catLabel, catShort, getPlace, photoSource, placesOf } from '@/data/places';
+import { catLabel, catGroup, getPlace, photoSource, placesOf } from '@/data/places';
 import type { LatLng, Place } from '@/data/types';
 import { useClusters } from '@/geo/clusters';
 import { HUB_LABELS } from '@/geo/geo-data';
@@ -63,13 +63,13 @@ export default function MapTab() {
   const all = useMemo(() => placesOf(country).filter((p) => p.ll), [country]);
   const cats = useMemo(() => {
     const m = new Map<string, number>();
-    all.forEach((p) => m.set(catShort(p.cat), (m.get(catShort(p.cat)) ?? 0) + 1));
+    all.forEach((p) => m.set(catGroup(p), (m.get(catGroup(p)) ?? 0) + 1));
     return [...m].sort((a, b) => b[1] - a[1]).slice(0, 7).map(([k]) => k);
   }, [all]);
   const list = useMemo(() => {
     const ql = q.trim().toLowerCase();
     return all
-      .filter((p) => (cat === 'all' || catShort(p.cat) === cat) && (!ql || `${p.name} ${p.full} ${p.near}`.toLowerCase().includes(ql)))
+      .filter((p) => (cat === 'all' || catGroup(p) === cat) && (!ql || `${p.name} ${p.full} ${p.near}`.toLowerCase().includes(ql)))
       .sort((a, b) => a.ll![1] - b.ll![1]); // запад → восток, как листается карусель
   }, [all, cat, q]);
   const items = useClusters(list, cam.zoom, sel);

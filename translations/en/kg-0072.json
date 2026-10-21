@@ -1,7 +1,7 @@
 {
  "name": "Lake Kol-Kogur",
  "full": "Lake Kol-Kogur",
- "dist": "Kemin district, Chuy Region, territory…",
+ "dist": "Kemin District",
  "near": "Kok-Oirok — ~12.5 km as the crow flies (OSM); inhabited villages with guesthouses — Kalmak-Ashuu, Karool-Debe, Shabdan, Tar-Suu lower down the Chon-Kemin valley; on the south side of the range — Tamchy on Issyk-Kul (2–3 days' travel over a pass).",
  "elev": "About 2470–2500 m: 2468 m (Nomad's Land), 2500 m (Sputnik8, 2026 tour). The value “about 2000 m” (Trip to Kyrgyzstan, Silk Road Explore) contradicts other sources and is probably too low.",
  "short": "Kol-Kogur is a secluded forest lake on the northern slope of Kungey Ala-Too in Chon-Kemin National Park (~2470 m), formed by an ancient landslide; it can be reached only on foot or on horseback.",
@@ -206,5 +206,6 @@
  "p.gaps.1": "the amount of the Chon-Kemin National Park fee in 2025–26",
  "p.gaps.2": "prices at the Ashuu guesthouse",
  "p.gaps.3": "coordinates of the crossing",
- "p.gaps.4": "length and ascent of the walking section to the lake"
+ "p.gaps.4": "length and ascent of the walking section to the lake",
+ "s.entry": "To be confirmed"
 }

@@ -140,5 +140,6 @@
  "p.gaps.0": "exact opening hours of the bridge",
  "p.gaps.1": "coordinates of the parking area and the bridge",
  "p.gaps.2": "current price of horse rides",
- "p.gaps.3": "whether the natural monument is paid from 2026"
+ "p.gaps.3": "whether the natural monument is paid from 2026",
+ "s.entry": "Free"
 }

@@ -84,5 +84,6 @@
  "p.access": "Accessible to everyone, including children, older people and dogs — a viewpoint by the road; watch out for traffic.",
  "p.gaps.0": "Status of the gates bypass",
  "p.gaps.1": "Official parking",
- "p.gaps.2": "Taxi price from Aktash"
+ "p.gaps.2": "Taxi price from Aktash",
+ "s.entry": "Free"
 }

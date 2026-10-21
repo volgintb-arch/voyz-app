@@ -1,7 +1,7 @@
 {
  "name": "Song-Kol",
  "full": "Lake Song-Kol (Son-Kul)",
- "dist": "A single administrative affiliation is not given in the sources…",
+ "dist": "Naryn Region",
  "near": "There are no permanent villages on the shore. Bases: Kochkor (via Kalmak-Ashuu, ~3 h), Kyzart village (start of the horse routes), Sary-Bulak, Naryn (~90 km southeast as the crow flies, via Terskey-Torpok), and from the southwest Ak-Talaa/Baetov (Moldo-Ashuu) and Chayek/Kyzyl-Kiya (Kara-Keche).",
  "elev": "3,016 m above sea level (map.kg, asiamountains.net, Ak-Sai, Caravanistan); Too.kg rounds it to 3,000 m.",
  "short": "Kyrgyzstan's second-largest lake, at 3,016 m amid endless jailoo (summer pasture): in summer there are yurt camps, herds of horses and flocks of sheep; in winter it is an empty, icy plain.",
@@ -264,5 +264,6 @@
  "p.gaps.2": "Price of a recreational fishing licence",
  "p.gaps.3": "Contacts of Shepherd's Life and Jailoo Tourism for 2026 (the websites did not open)",
  "p.gaps.4": "Coordinates of specific camps",
- "p.gaps.5": "Car rental in Bishkek — prices were not searched for in this session"
+ "p.gaps.5": "Car rental in Bishkek — prices were not searched for in this session",
+ "s.entry": "Free"
 }

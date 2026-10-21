@@ -13,7 +13,7 @@ import { RichText } from '@/components/rich-text';
 import { Sheet } from '@/components/sheet';
 import { Button, Chip, IconBubble, IndexRing, ReadMore, SectionHeader } from '@/components/ui';
 import { VoyzLogo } from '@/components/voyz-logo';
-import { catLabel, getPlace, monthLevels, placesOf } from '@/data/places';
+import { catLabel, getPlace, monthLevels, placesOf, seasonLabel } from '@/data/places';
 import type { Place } from '@/data/types';
 import { bringIcon } from '@/lib/icon-rules';
 import { cut, findTel, findUrl, fmtKm, lead, sentences, telHref } from '@/lib/text';
@@ -21,7 +21,7 @@ import { track } from '@/services/analytics';
 import { flushReports } from '@/services/backend';
 import { toast, useApp } from '@/store/app-store';
 import { color, motion, spacing, type } from '@/theme/tokens';
-import { currentLang, dateLabel, pl, tr, whenLabel } from '@/i18n';
+import { currentLang, dateLabel, pl, tr } from '@/i18n';
 
 import type { Reader, ReaderKey } from './readers';
 import { warnText } from './readers';
@@ -121,7 +121,7 @@ export function SeasonBlock({ place, onRead }: { place: Place; onRead: () => voi
         best: names.filter((_, i) => levels![i] === 2).join(', ') || '—',
         ok: names.filter((_, i) => levels![i] === 1).join(', ') || '—',
       })
-    : tr('Сезон: {month}', { month: whenLabel(place.s.when) });
+    : tr('Сезон: {month}', { month: seasonLabel(place) });
   return (
     <View style={styles.sec}>
       <SectionHeader title={tr('Когда ехать')} />

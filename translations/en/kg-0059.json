@@ -1,7 +1,7 @@
 {
  "name": "Dolon Pass",
  "full": "Dolon Pass (Dolon-Ashuu)",
- "dist": "On the border of Kochkor and Naryn districts of Naryn…",
+ "dist": "Border of Kochkor and Naryn districts",
  "near": "On the north side — Sary-Bulak (a highway junction with cafes and shops; 48 km from the A367/A365 junction to the pass per quaeldich.de), on the south side — the villages of the Ottuk valley. The town of Naryn is about 70 km to the southeast (open.kg). The earlier value “Ken-Suu ~6.5 km” was based on a catalog point offset by ~4.8 km from the pass.",
  "elev": "3030–3038 m: 3038.4 m (silkadv.com, open.kg, Nomad's Land, 3038 m), 3028 m (quaeldich.de), 3030 m (previous catalog/Wikipedia). The recommended label is “about 3030–3038 m”.",
  "short": "Dolon is a paved pass (≈3030–3038 m) on the Bishkek — Naryn — Torugart highway between Kochkor and Naryn, the main road entrance into the Naryn basin.",
@@ -151,5 +151,6 @@
  "p.access": "Suitable for everyone: a stop by the car on a level plateau. At an elevation of 3030 m a short stop is safe for children and older people. Stroller — along the roadside. With a dog — yes.",
  "p.gaps.0": "Names of cafes and fuel stations in Sary-Bulak",
  "p.gaps.1": "Timetable of Bishkek — Naryn services",
- "p.gaps.2": "Confirmation that inDrive works in Naryn"
+ "p.gaps.2": "Confirmation that inDrive works in Naryn",
+ "s.entry": "Free"
 }

@@ -158,5 +158,6 @@
  "p.gaps.1": "Prices at the two other camps",
  "p.gaps.2": "Coordinates of the start/bridge",
  "p.gaps.3": "Whether a permit is needed (sources contradict)",
- "p.gaps.4": "Status of the road construction around the lake"
+ "p.gaps.4": "Status of the road construction around the lake",
+ "s.entry": "Free"
 }

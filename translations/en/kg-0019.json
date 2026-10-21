@@ -114,5 +114,6 @@
  "p.gaps.0": "Whether the bridge was restored after 03.07.2026",
  "p.gaps.1": "Price of the marshrutka to Chayek",
  "p.gaps.2": "Guesthouses in Chayek and Bash-Kuugandy",
- "p.gaps.3": "ATM and hospital in Chayek — not confirmed"
+ "p.gaps.3": "ATM and hospital in Chayek — not confirmed",
+ "s.entry": "Free"
 }

@@ -11,7 +11,7 @@ import { Icon } from '@/components/icon';
 import { BigPlaceCard, MiniPlaceCard, RowPlaceCard } from '@/components/place-cards';
 import { Chip, SectionHeader } from '@/components/ui';
 import { VoyzLogo } from '@/components/voyz-logo';
-import { catShort, filterPlaces, noCar, placesOf, type Filters } from '@/data/places';
+import { catGroup, filterPlaces, noCar, placesOf, type Filters } from '@/data/places';
 import type { Place } from '@/data/types';
 import { HUB } from '@/geo/geo-data';
 import { catIcon } from '@/lib/icon-rules';
@@ -50,7 +50,7 @@ export default function Home() {
     const L = placesOf(country);
     const hub = HUB[country];
     const cats = new Map<string, number>();
-    L.forEach((p) => cats.set(catShort(p.cat), (cats.get(catShort(p.cat)) ?? 0) + 1));
+    L.forEach((p) => cats.set(catGroup(p), (cats.get(catGroup(p)) ?? 0) + 1));
     return {
       all: [...L].sort(byIdx),
       season: filterPlaces(country, { season: true }).slice(0, 10),

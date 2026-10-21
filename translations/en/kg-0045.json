@@ -1,7 +1,7 @@
 {
  "name": "Przhevalsky Museum",
  "full": "N. M. Przhevalsky Memorial Museum (Pristan-Przhevalsk)",
- "dist": "The urban-type settlement of Pristan-Przhevalsk is administratively part of the city of…",
+ "dist": "Pristan-Przhevalsk",
  "near": "Pristan-Przhevalsk — the museum is at the entrance to the settlement, 9 km north of the center of Karakol (too.kg, issykkul.biz; TripAdvisor: ~12 km). Address: 1 Przhevalsky St.",
  "elev": "1,643 m (Nomad's Land). A site above the Karakol Bay, slightly higher than the lake level (1,607 m).",
  "short": "A memorial complex above the Karakol Bay: a museum (since 1957) with the personal belongings, letters and stuffed animals from the expeditions of the Central Asia explorer, his grave and a 9-meter granite monument with a bronze eagle (1894) — the first monumental sculpture in Kyrgyzstan.",
@@ -146,5 +146,6 @@
  "p.gaps.0": "The number of the marshrutka to Pristan",
  "p.gaps.1": "The taxi tariff",
  "p.gaps.2": "Accessibility of the building for strollers",
- "p.gaps.3": "The museum’s phone number"
+ "p.gaps.3": "The museum’s phone number",
+ "s.entry": "50–100 som per person"
 }
